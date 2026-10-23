@@ -1,0 +1,2 @@
+.venv\Scripts\python -m tender_tracker --force
+Manual run command

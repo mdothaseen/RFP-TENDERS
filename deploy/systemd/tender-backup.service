@@ -1,0 +1,17 @@
+[Unit]
+Description=SSC Watch verified SQLite and document backup
+[Service]
+Type=oneshot
+User=tendertracker
+WorkingDirectory=/opt/tender-tracker
+Environment=TZ=Asia/Kolkata
+EnvironmentFile=-/etc/tender-tracker.env
+ExecStart=/opt/tender-tracker/.venv/bin/python -m tender_tracker --backup
+SuccessExitStatus=3
+TimeoutStartSec=1h
+Nice=15
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/tender-tracker
+MemoryMax=512M

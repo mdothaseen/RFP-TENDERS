@@ -1,0 +1,107 @@
+# General settings. Secrets (API key, email password, Telegram token) go in the .env file, not here.
+
+# Short description of your company. Claude uses it to mark each tender High / Medium / Low relevance.
+company_profile: >
+  CeeVision, an ASSESSMENT AGENCY in India. It assesses and certifies candidates for Sector Skill
+  Councils, NSDC, NCVET-recognised awarding bodies, state skill missions, universities and boards
+  (PMKVY, RPL, PM Vishwakarma, short-term training, apprenticeship, ToT/ToA, CBT / online, practical
+  and viva assessments). It does NOT run training centres and is NOT a training partner.
+  High relevance: empanelment / onboarding / selection of assessment agencies or assessment bodies,
+  third-party assessment and certification work, conducting CBT / online / practical examinations,
+  assessor and proctor deployment, RPL assessment, assessment requirements or calls of SSCs and
+  awarding bodies. Medium relevance: work close to assessment that CeeVision could bid for (exam
+  management, question bank / content creation, evaluation, monitoring / third-party verification of
+  training, skill gap studies, survey and impact assessment). Low relevance: training delivery,
+  running training centres, mobilisation, placement, office procurement, IT/hardware, printing,
+  events, construction, audits and staff recruitment.
+
+crawl:
+  workers: 6                 # sites checked in parallel
+  delay_seconds: 1.2         # pause between two requests to the same site
+  timeout_seconds: 30
+  respect_robots: true
+  daily:
+    max_depth: 3
+    max_pages: 150
+    js_max_pages: 50         # rendered pages per JavaScript site
+  light:                    # frequent checks skip WordPress/sitemaps and OCR/AI
+    max_depth: 1
+    max_pages: 6
+    js_max_pages: 3
+  deep:                      # used on deep_weekday and with --deep
+    max_depth: 5
+    max_pages: 350
+    js_max_pages: 150
+  site_max_minutes: 20       # stop crawling one website after this long (rest next scan)
+  deep_weekday: 6            # 0 = Monday ... 6 = Sunday
+  wp_media_max_pages: 40     # 100 files per page
+  sitemap_max_urls: 6000
+
+documents:
+  max_download_mb: 50
+  # Which categories are downloaded (vague-named files are always downloaded to read them).
+  download_categories: [Tender, RFP, EOI, Empanelment, Corrigendum, Notice, Recruitment]
+  # Only download files from the last N days (older files stay as links only).
+  baseline_days: 365
+  max_per_run: 60            # priority tender/notice documents first
+  unknown_per_run: 10        # small discovery batch: ambiguous files can hide tenders
+  deep_max_per_run: 300      # --deep / Sunday can drain more of the old backlog
+  deep_unknown_per_run: 100
+  time_budget_seconds: 300   # stop starting new documents after 5 min; finish/save in-flight work
+  progress_seconds: 15      # print a heartbeat even while one file is slow
+  # Scanned PDFs (photos of pages): read their text with Tesseract OCR, English + Hindi.
+  ocr:
+    enabled: true
+    max_pages: 30
+    language: eng+hin
+    timeout_seconds: 90     # includes waiting for the OCR slot; incomplete work retries from the saved PDF
+
+ai:
+  # Who reads the documents:
+  #   claude_app = a logged-in Claude CLI reads them with your Claude plan (no tracker API calls)
+  #   api        = the tracker calls the Claude API itself (needs ANTHROPIC_API_KEY, billed separately)
+  reader: claude_app
+  # Only documents first found on or after this date are read (older ones stay unread).
+  read_from: 2026-10-02
+  # Categories sent to Claude for detailed reading.
+  categories: [Tender, RFP, EOI, Empanelment, Corrigendum]
+  max_docs_per_run: 25
+  baseline_days: 45          # first run: only documents from the last N days
+  recent_days: 120           # later runs: skip old documents that are found for the first time
+  max_text_chars: 400000     # longer documents: first part only (marked in Excel)
+  max_pdf_pages: 100         # scanned PDFs: first N pages only (marked in Excel)
+  max_attempts: 3
+  timeout_minutes: 20        # Claude CLI worker; scanning and email retries run separately on VPS
+  daily_cost_limit_usd: 2.0  # API mode: stop starting requests after recorded estimated cost reaches this
+
+excel:
+  include_all: true         # every item found on the websites is in Excel (emails stay short)
+  baseline_max_age_days: 365 # older items stay in the database but are left out of Excel
+  closing_soon_days: 7
+
+notify:
+  # false = only ONE summary email per scan (new tenders, closing soon, updates all inside it).
+  # true  = also a separate email for every new item, page change and deadline reminder.
+  separate_emails: false
+  when_empty: false
+  instant_categories: [Tender, RFP, EOI, Empanelment, Corrigendum, Notice]
+  instant_relevance: [High, Medium, ""] # unassessed items stay visible; Low goes into daily digest
+  reminder_days: [7, 3, 1]
+  daily_digest_after: "18:00" # at most one daily digest; enriched details + lower relevance items
+  attach_master_daily: true
+
+monitoring:
+  light_workers: 3
+  document_workers: 2
+  document_check_minutes: 15
+  document_checks_per_cycle: 20 # rolling budget; not all PDFs can be rechecked on every poll
+  active_document_days: 60
+  stale_after_minutes: 60
+  health_emails: false        # true only on the VPS with hourly scans; on the laptop it gives false alarms
+  failure_threshold: 3
+  min_free_disk_mb: 2048
+
+backup:
+  enabled: true
+  directory: backups
+  keep_snapshots: 7          # blobs are deduplicated and retained for document history/off-site copies

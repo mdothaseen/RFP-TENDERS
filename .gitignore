@@ -1,0 +1,23 @@
+.venv/
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Runtime output
+
+output/
+logs/
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/*.db-journal
+data/text/
+data/ocr_cache/
+data/*.guard
+data/*.lock
+data/ai_queue.json
+data/ai_results.json
+backups/
+.pytest-*/
+.cache/

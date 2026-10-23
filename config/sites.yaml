@@ -1,0 +1,888 @@
+# Websites checked every day.
+#
+# code         short id (used for folder names and in Excel)
+# name         full organisation name
+# url          homepage that the crawl starts from
+# seeds        pages crawled first on every run (tender / notice / career pages found during research).
+#              They are only hints: every run still crawls the site, reads sitemaps and the WordPress API.
+# js           true = site is built with JavaScript, pages are rendered in headless Chromium
+# ssl_verify   false = site has a broken HTTPS certificate
+# extra_hosts  other hostnames whose documents belong to this site
+# exclude      URL substrings the crawler should skip
+#
+# To add a new organisation, copy one block and change the values.
+
+sites:
+  - code: BWSSC
+    name: Beauty & Wellness Sector Skill Council (B&WSSC)
+    url: https://www.bwssc.in/
+    seeds:
+      - https://www.bwssc.in/notices-and-updates
+      - https://www.bwssc.in/career
+      - https://www.bwssc.in/press-coverages
+
+  - code: ESSCI
+    name: Electronics Sector Skill Council of India (ESSCI)
+    url: https://www.essc-india.org/
+    seeds:
+      - https://www.essc-india.org/rfp.php
+      - https://www.essc-india.org/newsletter.php
+
+  - code: SCGJ
+    name: Skill Council for Green Jobs (SCGJ)
+    url: https://sscgj.in/
+    seeds:
+      - https://sscgj.in/newsletter/
+
+  - code: HCSSC
+    name: Handicrafts and Carpet Sector Skill Council (HCSSC)
+    url: https://hcssc.in/
+    seeds:
+      - https://hcssc.in/notifications
+      - https://hcssc.in/career
+
+  - code: ASDC
+    name: Automotive Skills Development Council (ASDC)
+    url: https://www.asdc.org.in/
+    seeds:
+      - https://www.asdc.org.in/notice-update
+      - https://www.asdc.org.in/notice
+      - https://www.asdc.org.in/press-release
+    exclude: ["/blogs/"]
+
+  - code: FICSI
+    name: Food Industry Capacity and Skill Initiative (FICSI)
+    url: https://www.ficsi.in/
+    seeds:
+      - https://www.ficsi.in/news-and-events
+      - https://www.ficsi.in/de-empanelled
+
+  - code: RCPSDC
+    name: Rubber, Chemical & Petrochemical Skill Development Council (RCPSDC)
+    url: https://rcpsdc.in/
+    js: true
+    seeds:
+      - https://rcpsdc.in/notice
+      - https://rcpsdc.in/Career
+    notes: NCVET list shows rsdcindia.in, which no longer resolves.
+
+  - code: SPEFL-SC
+    name: Sports, Physical Education, Fitness and Leisure Skills Council (SPEFL-SC)
+    url: https://www.sportsskills.in/
+    seeds:
+      - https://www.sportsskills.in/tender_notice.php
+      - https://www.sportsskills.in/careers.php
+      - https://www.sportsskills.in/all-blogs.php
+
+  - code: MEPSC
+    name: Management and Entrepreneurship and Professional Skills Council (MEPSC)
+    url: https://www.mepsc.in/
+    seeds:
+      - https://www.mepsc.in/notice/
+      - https://www.mepsc.in/careers/
+
+  - code: AMHSSC
+    name: Apparel Made-Ups & Home Furnishing Sector Skill Council
+    url: https://www.sscamh.com/
+    seeds:
+      - https://www.sscamh.com/en/tenders-enquiries
+      - https://www.sscamh.com/en/news
+      - https://www.sscamh.com/en/job-recruitment-list
+      - https://www.sscamh.com/en/downloads
+
+  - code: CGSC
+    name: Capital Goods & Strategic Skill Council
+    url: https://cgssc.org/
+    seeds:
+      - https://cgssc.org/latest-news/
+      - https://cgssc.org/news/
+
+  - code: MESC
+    name: Media and Entertainment Skills Council (MESC)
+    url: https://mescindia.org/
+    seeds:
+      - https://mescindia.org/downloads/
+      - https://mescindia.org/careers
+      - https://mescindia.org/press-release
+
+  - code: PSSC
+    name: Power Sector Skill Council
+    url: https://www.psscindia.org/
+    seeds:
+      - https://www.psscindia.org/NewsEvents.aspx
+      - https://www.psscindia.org/EmploymentNotice.aspx
+
+  - code: TSC
+    name: Textile Sector Skill Council (TSC)
+    url: https://texskill.in/
+    seeds:
+      - https://texskill.in/rfp.php
+      - https://texskill.in/notice2025.php
+    keep_fragments: true
+
+  - code: ASCI
+    name: Agriculture Sector Skill Council (ASCI)
+    url: https://asci-india.com/
+    seeds:
+      - https://asci-india.com/other-notices-RFPS.php
+      - https://asci-india.com/latest-updates.php
+      - https://asci-india.com/notice.php
+
+  - code: HSSC-HC
+    name: Hydrocarbon Sector Skill Council (HSSC)
+    url: https://www.hsscindia.in/
+    js: true
+    seeds:
+      - https://www.hsscindia.in/rfp.html
+      - https://www.hsscindia.in/news-events.html
+      - https://www.hsscindia.in/career.html
+
+  - code: HSSC-HLT
+    name: Healthcare Sector Skill Council
+    url: https://www.healthcare-ssc.in/
+    seeds:
+      - https://www.healthcare-ssc.in/update.aspx
+      - https://www.healthcare-ssc.in/public-info-page-211
+
+  - code: CSDCI
+    name: Construction Skill Development Council of India
+    url: https://www.csdcindia.org/
+    seeds:
+      - https://www.csdcindia.org/tenders/
+      - https://www.csdcindia.org/newsupdates/
+
+  - code: IASC
+    name: Instrumentation Automation Surveillance & Communication Sector Skill Council (IASC)
+    url: https://iascsectorskillcouncil.in/
+    seeds:
+      - https://iascsectorskillcouncil.in/career/
+
+  - code: TSSC
+    name: Telecom Sector Skill Council
+    url: https://www.tsscindia.com/
+    seeds:
+      - https://www.tsscindia.com/Events.aspx
+      - https://www.tsscindia.com/press-release-10167
+      - https://www.tsscindia.com/careers-page-10218
+
+  - code: THSC
+    name: Tourism and Hospitality Skill Council (THSC)
+    url: https://thsc.in/
+    seeds:
+      - https://thsc.in/notifications/
+
+  - code: WMPSC
+    name: Water Management & Plumbing Skill Council (Indian Plumbing Skills Council)
+    url: https://wmpsc.in/
+    js: true
+    seeds:
+      - https://wmpsc.in/notices.html
+      - https://wmpsc.in/media-coverage.html
+    notes: ipssc.in redirects here.
+
+  - code: FFSC
+    name: Furniture and Fittings Skill Council (FFSC)
+    url: https://ffsc.in/index2.php
+    seeds:
+      - https://ffsc.in/rfp_tender.php
+      - https://ffsc.in/careers
+      - https://ffsc.in/news-skill-ecosystem.php
+    notes: ffsc.in root is only a splash page.
+
+  - code: HMCG
+    name: Home Management and Caregivers Sector Skill Council (HMCG SSC)
+    url: https://dwsscindia.com/
+    seeds:
+      - https://dwsscindia.com/6415-2/
+      - https://dwsscindia.com/notice/
+      - https://dwsscindia.com/career/
+
+  - code: NASSCOM
+    name: National Association of Software and Service Companies (NASSCOM) - SSC
+    url: https://www.sscnasscom.com/
+    js: true
+    seeds:
+      - https://www.sscnasscom.com/media-center
+      - https://www.sscnasscom.com/newsletter
+
+  - code: LSC
+    name: Logistics Sector Skill Council (LSC)
+    url: https://lsc-india.com/
+    seeds:
+      - https://lsc-india.com/news_letter
+      - https://lsc-india.com/career.php
+
+  - code: AASSC
+    name: Aerospace and Aviation Sector Skill Council (AASSC)
+    url: https://www.aassc.in/
+    js: true
+    seeds:
+      - https://www.aassc.in/jobs
+      - https://www.aassc.in/services/assessments
+      - https://www.aassc.in/training-partners
+
+  - code: GJSCI
+    name: Gems and Jewellery Sector Skill Council (GJSCI)
+    url: https://www.gjsci.org/
+    seeds:
+      - https://www.gjsci.org/news.html
+      - https://www.gjsci.org/careers.html
+
+  - code: SCPWD
+    name: Skill Council for Person with Disability (SCPwD)
+    url: https://scpwd.in/
+    seeds:
+      - https://scpwd.in/tenders-eoi-rfp
+      - https://scpwd.in/latest-news
+      - https://scpwd.in/career
+
+  - code: IESC
+    name: Infrastructure Equipment Sector Skill Council (IESC)
+    url: https://iescindia.com/
+    seeds:
+      - https://iescindia.com/newsletters-articles/
+
+  - code: IISSSC
+    name: Indian Iron and Steel Sector Skill Council
+    url: https://www.iisssc.org/
+    seeds:
+      - https://www.iisssc.org/newsletter/
+
+  - code: SCMS
+    name: Skill Council For Mining Sector (SCMS)
+    url: https://www.skillcms.in/
+    seeds:
+      - https://www.skillcms.in/notices-page-10111
+      - https://www.skillcms.in/news-magazines.aspx
+
+  - code: BFSI
+    name: Banking, Financial Services and Insurance Sector Skill Council (BFSI SSC)
+    url: https://bfsissc.com/
+    js: true
+    seeds:
+      - https://bfsissc.com/tenders.php
+      - https://bfsissc.com/BFSISSCinNews
+      - https://bfsissc.com/career.php
+
+  - code: LSSSDC
+    name: Life Sciences Sector Skill Development Council (LSSSDC)
+    url: https://www.lsssdc.in/
+    seeds:
+      - https://www.lsssdc.in/page/Tenders-RFP
+      - https://www.lsssdc.in/page/Notices-
+      - https://www.lsssdc.in/page/Career-LSSSDC
+
+  - code: LSSC
+    name: Leather Sector Skill Council (LSSC)
+    url: https://www.leatherssc.org/
+    seeds:
+      - https://www.leatherssc.org/media/library/news-letter
+
+  - code: RASCI
+    name: Retail Associated Skill Council of India (RASCI)
+    url: https://www.rasci.in/
+    ssl_verify: false
+    seeds:
+      - https://www.rasci.in/TP-Notification.php
+      - https://www.rasci.in/Assessment-Requisition.php
+
+  - code: NSDC
+    name: National Skill Development Corporation
+    url: https://www.nsdcindia.org/
+    extra_hosts: [api1.nsdcindia.org]
+    seeds:
+      - https://www.nsdcindia.org/active-tender
+      - https://www.nsdcindia.org/notice-current
+      - https://www.nsdcindia.org/careers
+      - https://www.nsdcindia.org/press-release-current
+
+  - code: NCVET
+    name: National Council for Vocational Education and Training (NCVET)
+    url: https://ncvet.gov.in/?lang=en
+    exclude: ["/hi/"]
+    seeds:
+      - https://ncvet.gov.in/tenders/
+      - https://ncvet.gov.in/whats-new/
+      - https://ncvet.gov.in/career-opportunities/
+      - https://ncvet.gov.in/office-orders/
+    notes: The bare domain redirects to the Hindi site (/hi/); English pages are used instead.
+
+  # msme.gov.in blocks automated browsers (403), so the tenders of the Ministry's
+  # Development Commissioner office (dcmsme.gov.in, plain HTML) are read instead.
+  - code: MM
+    name: "Office of the Development Commissioner, Ministry of MSME (DC-MSME)"
+    url: https://dcmsme.gov.in/
+    # Staff-only pages (office / transfer / budget orders, seniority lists): over 1000 files, never tenders.
+    exclude: ["/employ-corner/", "Office_Order", "Budget_Allocation", "Transfer_order", "MISC_Order",
+              "/IEDS", "Seniority_List", "Recruitment_rules", "compassionate_appointment", "Sanction_Order",
+              "RTI_Disclosure", "OM_Instructions", "/old/"]
+    seeds:
+      - https://dcmsme.gov.in/Tender.aspx
+      - https://dcmsme.gov.in/Notice_Board.aspx
+      - https://dcmsme.gov.in/Advertisements.aspx
+
+  - code: MB
+    name: "Maharashtra State Board of Skill, Vocational Education and Training (MSBSVET)"
+    url: https://msbsvet.edu.in/Public/Home.aspx
+    seeds: []
+
+  - code: NIELIT
+    name: "National Institute of Electronics & Information Technology (NIELIT)"
+    url: https://www.nielit.gov.in/
+    js: true
+    seeds: []
+
+  # ---- NCVET awarding bodies (https://ncvet.gov.in/awarding-bodies-3/), added 2026-10-22 ----
+  - code: MSU
+    name: "Medhavi Skill University"
+    url: https://msu.edu.in/
+    seeds:
+      - https://www.msu.edu.in/tenders
+
+  - code: CUTM
+    name: "Centurion University of Technology and Management"
+    url: https://cutm.ac.in/
+    seeds:
+      - https://cutm.ac.in/tenders
+
+  - code: DTNBWEDM
+    name: "Dattopant Thengadi National Board for Workers Education and Development, Ministry of Labor and Employment"
+    url: https://cbwe.gov.in/
+    seeds: []
+
+  - code: JSPL
+    name: "Jindal Steel & Power Limited"
+    url: https://www.jindalsteel.com/
+    seeds: []
+
+  - code: ASEF
+    name: "Adani Skills and Education Foundation"
+    url: https://www.adanifoundation.org/
+    seeds: []
+
+  - code: LLF
+    name: "Labournet Livelihood Foundation"
+    url: https://labournet.in/
+    seeds: []
+
+  - code: DRF
+    name: "Dr Reddys Foundation"
+    url: https://www.drreddysfoundation.org/
+    seeds: []
+
+  - code: GDGU
+    name: "G D Goenka University"
+    url: https://www.gdgoenkauniversity.com/
+    seeds: []
+
+  - code: SISASS
+    name: "Sulabh International School of Action and Sociology of Sanitation"
+    url: https://www.sulabhinternational.org/
+    seeds: []
+
+  - code: APMZL
+    name: "Andhra Pradesh Medtech Zone Limited"
+    url: https://amtz.in/
+    seeds:
+      - https://amtz.in/tenders/
+
+  - code: HHEF
+    name: "Henry Harvin Education Foundation"
+    url: https://www.henryharvin.com/
+    seeds: []
+
+  - code: CIPET
+    name: "Central Institute of Petrochemicals Engineering & Technology (CIPET)"
+    url: https://www.cipet.gov.in/
+    seeds: []
+
+  - code: NFDC
+    name: "National Film Development Corporation (NFDC)"
+    url: https://www.nfdcindia.com/
+    seeds: []
+
+  - code: IAF
+    name: "Indian Air Force"
+    url: https://indianairforce.nic.in/
+    seeds: []
+
+  - code: NAVY
+    name: "Indian Navy (incl. Directorate of Special Operations and Diving)"
+    url: https://www.indiannavy.gov.in/
+    seeds: []
+
+  - code: ARMY
+    name: "Indian Army (Armoured Corps, Artillery, Signals, Engineers, AMC, EME & other corps)"
+    url: https://indianarmy.nic.in/
+    js: true
+    seeds:
+      - https://indianarmy.nic.in/tenderrfi/tender/
+
+  - code: DGT
+    name: "Directorate General of Training (DGT)"
+    url: https://dgt.gov.in/
+    seeds:
+      - https://dgt.gov.in/hi/tender-notices
+      - https://dgt.gov.in/hi/pm-setu-tender-notices
+      - https://dgt.gov.in/hi/pm-setu-states/uts-clusters-rfps
+
+  - code: NIOS
+    name: "National Institute of Open Schooling (NIOS)"
+    url: https://www.nios.ac.in/
+    seeds:
+      - https://www.nios.ac.in/tender-notice.aspx
+
+  - code: NAR
+    name: "National Academy of RUDSETI"
+    url: https://www.rudsetacademy.org/
+    seeds:
+      - https://www.rudsetacademy.org/Tender_Notification.html
+
+  - code: BECIL
+    name: "Broadcast Engineering Consultants India Limited (BECIL)"
+    url: https://www.becil.com/
+    seeds:
+      - https://www.becil.com/tenders
+
+  - code: IIT
+    name: "Indian Institute of Technology (IIT) Guwahati"
+    url: https://www.iitg.ac.in/
+    seeds: []
+
+  - code: IACE
+    name: "International Automobile Centre of Excellence (iACE)"
+    url: https://www.iace.co.in/
+    seeds: []
+
+  - code: CBSE
+    name: "Central Board of Secondary Education (CBSE)"
+    url: https://www.cbse.gov.in/
+    seeds: []
+
+  - code: MSRVVP
+    name: "Maharshi Sandipani Rashtriya Ved Vidya Pratishthan"
+    url: https://msrvvp.ac.in/
+    seeds:
+      - https://msrvvp.ac.in/veda/pages/tenders.html
+
+  - code: ICAI
+    name: "The Institute of Cost Accountants of India (ICAI)"
+    url: https://icmai.in/
+    seeds: []
+
+  - code: GU
+    name: "Ganpat University"
+    url: https://www.ganpatuniversity.ac.in/
+    seeds:
+      - https://www.ganpatuniversity.ac.in/about/tenders-and-notification
+
+  - code: GCVT
+    name: "Gujarat Council of Vocational Training"
+    url: https://gcvt.gujarat.gov.in/
+    seeds: []
+
+  - code: CSVTU
+    name: "Chhattisgarh Swami Vivekanand Technical University"
+    url: https://csvtu.ac.in/
+    seeds:
+      - https://csvtu.ac.in/ew/notifications/?query=tenders
+
+  - code: UPSDM
+    name: "UP Skill Development Mission (UPSDM)"
+    url: https://upsdm.gov.in/
+    seeds:
+      - https://upsdm.gov.in/RFP/OrganizationRegistration
+      - https://upsdm.gov.in/Home/EmpanelledHotels
+
+  - code: ASAP
+    name: "Additional Skill Acquisition Programme (ASAP)"
+    url: https://asapkerala.gov.in/
+    seeds:
+      - https://asapkerala.gov.in/tenders/
+      - https://asapkerala.gov.in/notification-for-the-empanelment-of-skill-trainer/
+
+  - code: KSDC
+    name: "Karnataka Skill Development Corporation"
+    url: https://kaushalkar.com/
+    js: true
+    seeds: []
+
+  - code: SVSU
+    name: "Shri Vishwakarma Skill University (SVSU)"
+    url: https://svsu.ac.in/
+    seeds:
+      - https://svsu.ac.in/tenders-notices.php
+
+  - code: WBSCTVES
+    name: "West Bengal State Council of Technical and Vocational Education and Skill Development"
+    url: https://webscte.co.in/
+    seeds:
+      - https://webscte.co.in/Services-Tender
+
+  - code: HARTRON
+    name: "Haryana State Electronics Development Corporation Limited (HARTRON)"
+    url: https://hartron.org.in/
+    seeds:
+      - https://www.hartron.org.in/tenders-more-than-rs-5-crores/
+
+  - code: NTTF
+    name: "Nettur Technical Training Foundation (NTTF)"
+    url: https://www.nttftrg.com/
+    seeds: []
+
+  - code: MEWAR
+    name: "Mewar University"
+    url: https://www.mewaruniversity.org/
+    seeds: []
+
+  - code: MRSPTU
+    name: "Maharaja Ranjit Singh Punjab Technical University (MRSPTU)"
+    url: https://mrsptu.ac.in/
+    seeds:
+      - https://mrsptu.ac.in/tenders_quotations.php
+
+  - code: CDAC
+    name: "CDAC"
+    url: https://www.cdac.in/
+    js: true
+    seeds:
+      - https://www.cdac.in/index.aspx?id=tenders_eoi
+      - https://www.cdac.in/index.aspx?id=tenders
+      - https://www.cdac.in/index.aspx?id=lu_EoIforARIESECO_24042026
+
+  - code: HCLTECH
+    name: "HCL Technologies"
+    url: https://www.hcltech.com/
+    seeds: []
+
+  - code: TNSDC
+    name: "Tamil Nadu Skill Development Corporation"
+    url: https://www.tnskill.tn.gov.in/
+    seeds:
+      - https://www.tnskill.tn.gov.in/tenders/
+
+  - code: IJIRA
+    name: "Indian Jute Industries' Research Association (iJIRA)"
+    url: https://www.ijira.org/
+    seeds: []
+
+  - code: CRISP
+    name: "Centre for Research and Industrial Staff Performance (CRISP)"
+    url: https://www.crispindia.net/
+    seeds: []
+
+  - code: NIESBUD
+    name: "The National Institute for Entrepreneurship and Small Business Development (NIESBUD)"
+    url: https://www.niesbud.nic.in/
+    seeds: []
+
+  - code: DMRA
+    name: "Delhi Metro Rail Academy (DMRA)"
+    url: https://www.delhimetrorail.com/
+    seeds: []
+
+  - code: NIWE
+    name: "National Institute of Wind Energy"
+    url: https://niwe.res.in/
+    seeds:
+      - https://niwe.res.in/Tenders/tender_data/
+
+  - code: BAJAJFIN
+    name: "Bajaj Finserv"
+    url: https://www.bajajfinserv.in/
+    seeds: []
+
+  - code: DYMT
+    name: "Divya Yog Mandir Trust (DYMT)"
+    url: https://www.divyayoga.com/
+    seeds: []
+
+  - code: FDDI
+    name: "Footwear Design & Development Institute(FDDI)"
+    url: https://fddiindia.com/
+    seeds:
+      - https://fddiindia.com/tenders
+
+  - code: SSU
+    name: "Sri Sri University"
+    url: https://srisriuniversity.edu.in/
+    seeds:
+      - https://srisriuniversity.edu.in/tenders/
+
+  - code: ONDC
+    name: "Open Network for Digital Commerce (ONDC)"
+    url: https://ondc.org/
+    seeds: []
+
+  - code: INSPACE
+    name: "Indian National Space Promotion and Authorization Centre (IN - SPACe)"
+    url: https://www.inspace.gov.in/
+    seeds: []
+
+  - code: KARMAYOGI
+    name: "Karmayogi Bharat"
+    url: https://karmayogibharat.gov.in/
+    js: true
+    seeds: []
+
+  - code: LTSUP
+    name: "Lamrin Tech Skills University, Punjab"
+    url: https://ltsu.ac.in/
+    seeds:
+      - https://www.ltsu.ac.in/job-opportunities
+
+  - code: IBM
+    name: "IBM"
+    url: https://www.ibm.com/in-en
+    seeds: []
+
+  - code: VBABSS
+    name: "Vidya Bharti Akhil Bhartiye Shiksha Sansthan"
+    url: https://vidyabharti.net/
+    seeds: []
+
+  - code: NISDMSJE
+    name: "National Institute of Social Defence, Ministry of Social Justice and Empowerment"
+    url: https://nisd.gov.in/
+    seeds:
+      - https://nisd.gov.in/tenders.html
+
+  - code: TPCL
+    name: "Tata Power Company Ltd."
+    url: https://www.tatapower.com/
+    seeds: []
+
+  - code: IEI
+    name: "The Institution of Engineers (India)"
+    url: https://www.ieindia.org/
+    js: true
+    seeds: []
+
+  - code: NITTTR
+    name: "National Institute of Technical Teachers Training and Research (NITTTR), Chandigarh"
+    url: https://nitttrchd.ac.in/
+    seeds: []
+
+  - code: WADHWANI
+    name: "Skill Development Network (SDN) - Implementing Wadhwani Skills Initiatives"
+    url: https://wadhwanifoundation.org/
+    js: true
+    seeds: []
+
+  - code: IIBF
+    name: "Indian Institute of Banking and Finance (IIBF)"
+    url: https://www.iibf.org.in/
+    seeds:
+      - https://www.iibf.org.in/tender
+
+  - code: RTMSSU
+    name: "Ratan Tata Maharashtra State Skills University, Mumbai (RTMSSU)"
+    url: https://mssu.ac.in/
+    seeds:
+      - https://mssu.ac.in/tender-expression-of-interest/
+
+  - code: WBSCVT
+    name: "West Bengal State Council for Vocational Training (WBSCVT)"
+    url: https://scvtwb.wb.gov.in/
+    seeds: []
+
+  - code: INFOSYS
+    name: "Infosys Tech"
+    url: https://www.infosys.com/
+    js: true
+    seeds: []
+
+  - code: UOUHU
+    name: "Uttarakhand Open University, Haldwani, Uttarakhand"
+    url: https://uou.ac.in/
+    seeds: []
+
+  - code: SGSU
+    name: "Scope Global Skill University"
+    url: https://sgsuniversity.ac.in/
+    js: true
+    seeds: []
+
+  - code: SBTETAP
+    name: "State Board of Technical Education and Training, Andhra Pradesh"
+    url: https://sbtet.ap.gov.in/
+    js: true
+    seeds: []
+
+  - code: NIGST
+    name: "National Institute for Geo-informatics Science and Technology, Survey of India (NIGST)"
+    url: https://www.surveyofindia.gov.in/
+    seeds:
+      - https://surveyofindia.gov.in/pages/revised-consolidated-instructions-global-tender
+
+  - code: DFCCIL
+    name: "Dedicated Freight Corridor Corporation of India Ltd (DFCCIL)"
+    url: https://dfccil.com/
+    seeds:
+      - https://dfccil.com/Home/DynemicPages?MenuId=338
+      - https://dfccil.com/Home/DynemicPages?MenuId=339
+      - https://dfccil.com/Home/DynemicPages?MenuId=337
+
+  - code: CA
+    name: "Council of Architecture"
+    url: https://www.coa.gov.in/
+    seeds:
+      - https://coa.gov.in/tenders.php?layout=&lang=1&level=0&linkid=18&lid=19
+
+  - code: FIPL
+    name: "Flipkart Internet Private Limited"
+    url: https://www.flipkart.com/
+    seeds: []
+
+  - code: DBAOUG
+    name: "Dr.Babasaheb Ambedkar Open University, Gujarat"
+    url: https://baou.edu.in/
+    seeds: []
+
+  - code: BIEAP
+    name: "Board of Intermediate Education, Andhra Pradesh"
+    url: https://bie.ap.gov.in/
+    seeds: []
+
+  - code: KKHSOUGA
+    name: "Krishna Kanta Handiqui State Open University, Guwahati, Assam"
+    url: https://kkhsou.ac.in/
+    seeds: []
+
+  - code: JDTBU
+    name: "JAIN Deemed to be University"
+    url: https://www.jainuniversity.ac.in/
+    seeds: []
+
+  - code: HKCL
+    name: "Haryana Knowledge Corporation Ltd (HKCL)"
+    url: https://hkcl.in/
+    seeds:
+      - https://hkcl.in/tender
+
+  - code: KSOUMK
+    name: "Karnataka State Open University, Mysuru, Karnataka"
+    url: https://ksoumysuru.ac.in/
+    js: true
+    seeds: []
+
+  - code: SSRGSPB
+    name: "Sant Shiromani Ravidas Global Skills Park, Bhopal"
+    url: https://www.globalskillspark.in/
+    seeds:
+      - https://www.globalskillspark.in/index.php/administrative/tenders
+      - https://globalskillspark.in/index.php/administrative/tenders/e-tender-document-for-the-invitation-for-bids-for-allotment-of-commercial-shops-at-covenio-shopping-complex-of-ssrgsp
+
+  - code: MH
+    name: "Max Healthcare"
+    url: https://www.maxhealthcare.in/
+    js: true
+    seeds: []
+
+  - code: DETT
+    name: "Department of Employment and Training, Telangana"
+    url: https://employment.telangana.gov.in/
+    seeds: []
+
+  - code: NIITF
+    name: "NIIT Foundation"
+    url: https://www.niitfoundation.org/
+    seeds: []
+
+  - code: NIRDPR
+    name: "The National Institute of Rural Development and Panchayati Raj (NIRD&PR), Hyderabad"
+    url: https://nirdpr.org.in/
+    seeds:
+      - https://nirdpr.org.in/tenders_new.aspx
+
+  - code: CII
+    name: "Confederation of Indian Industry (CII)"
+    url: https://www.cii.in/
+    js: true
+    seeds: []
+
+  - code: CHTIM
+    name: "Central Hindi Training Institute, MHA"
+    url: https://chti.rajbhasha.gov.in/
+    seeds: []
+
+  - code: GTRTCK
+    name: "Government Tool Room and Training Centre, Karnataka"
+    url: https://gttc.karnataka.gov.in/
+    js: true
+    seeds: []
+
+  - code: HAL
+    name: "Hindustan Aeronautics Limited"
+    url: https://hal-india.co.in/
+    seeds: []
+
+  - code: MPBOUBMP
+    name: "M. P. Bhoj Open University, Bhopal, Madhya Pradesh"
+    url: https://mpbou.edu.in/
+    seeds: []
+
+  - code: BESTIU
+    name: "Bharatiya Engineering Science and Technology Innovation University (BESTIU)"
+    url: https://bestiu.edu.in/
+    seeds: []
+
+  - code: HPKVN
+    name: "Himachal Pradesh Kaushal Vikas Nigam"
+    url: https://hpkvn.in/
+    seeds:
+      - https://hpkvn.in/tenders-circulars/
+
+  - code: SSPU
+    name: "Symbiosis Skills and Professional University"
+    url: https://www.sspu.ac.in/
+    seeds: []
+
+  - code: YCMOUN
+    name: "Yashwantrao Chavan Maharashtra Open University, Nashik"
+    url: https://ycmou.ac.in/
+    seeds:
+      - https://ycmou.ac.in/tenders/
+
+  - code: APEXU
+    name: "Apex University"
+    url: https://www.apexuniversity.co.in/
+    seeds: []
+
+  - code: MSBSHSE
+    name: "Maharashtra State Board of Secondary and Higher Secondary Education (MSBSHSE)"
+    url: https://www.mahahsscboard.in/
+    js: true
+    seeds: []
+
+  - code: WSC
+    name: "World Skill Center"
+    url: https://worldskillcenter.org/
+    seeds:
+      - https://worldskillcenter.org/en/sun/tenders
+
+  - code: GBSHSE
+    name: "Goa Board of Secondary and Higher Secondary Education"
+    url: https://www.gbshse.in/
+    seeds: []
+
+  - code: PSEB
+    name: "Punjab School Education Board"
+    url: https://www.pseb.ac.in/
+    seeds:
+      - https://www.pseb.ac.in/tenders
+
+  - code: MBSE
+    name: "Mizoram Board of School Education"
+    url: https://mbse.edu.in/
+    seeds: []
+
+  - code: BSEAP
+    name: "Board of Secondary Education, Andhra Pradesh"
+    url: https://www.bse.ap.gov.in/
+    seeds: []
+
+  - code: NBSE
+    name: "Nagaland Board of School Education"
+    url: https://nbsenl.edu.in/
+    seeds: []

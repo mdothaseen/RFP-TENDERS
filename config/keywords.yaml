@@ -1,0 +1,219 @@
+# Keyword rules used to classify every link / document that is found.
+# Patterns are case-insensitive regular expressions matched against:
+#   link text + surrounding text + file name (and the first pages of a document when read).
+#
+# Categories are checked in the order below; the first one that matches wins.
+# So "Corrigendum to RFP ..." becomes Corrigendum, "EOI for empanelment ..." becomes EOI.
+
+categories:
+  Corrigendum:
+    - corrigendum
+    - addendum
+    - 'extension of (the )?(last|due|submission|closing) date'
+    - 'date (has been |is )?extended'
+    - 'extended (till|upto|up to|to)'
+    - 'pre[- ]?bid (query|queries|clarification|response|meeting)'
+    - 'response to (pre[- ]?bid )?quer'
+    - शुद्धिपत्र
+  EOI:
+    - '\beois?\b'
+    - 'expressions? of interest'
+    - 'expression[-_ ]of[-_ ]interest'
+    - 'call for eoi'
+    - अभिरुचि
+  RFP:
+    - '\brfps?\b'
+    - '\brpfs?\b'
+    - '\brfqs?\b'
+    - '\brfe\b'
+    - 'request[-_ ]for[-_ ](proposal|quotation|qualification|empanelment|information)'
+    - '\bquotations?\b'
+    - '\bgem\b.*\bbid\b'
+  Tender:
+    - '\btenders?\b'
+    - 'e-?tender'
+    - 'notice inviting tender'
+    - '\bnit\b'
+    - 'bid document'
+    - 'invitation (for|to) bid'
+    - '\bbids? (are|is) invited'
+    - '\bbids?\b'
+    - निविदा
+  Empanelment:
+    - '(?<!de-)(?<!de )(?<!de)empanelment'
+    - '\bempanel\b'
+    - 'invit\w*.{0,40}empanel'
+    - 'onboarding of (assessment|training|aa|tp)'
+    - 'selection of (an? )?(agency|agencies|partner|partners|vendor|vendors|firm|firms|training provider|training partner|consultant|organi[sz]ation)'
+    - 'engagement of (an? )?(agency|agencies|firm|firms|vendor|vendors|partner|partners|organi[sz]ation)'
+    - 'hiring of (an? )?(agency|agencies|firm|firms|vendor|consultancy)'
+    - 'appointment of (an? )?(agency|agencies|firm|firms|auditor|ca firm|consultant)'
+    - 'call for (proposals?|applications from (agencies|partners|organi[sz]ations|training))'
+    - 'proposals? (are|is) invited'
+    - 'invit(es|ing|ation of) (proposals?|applications from (agencies|training|organi[sz]ations|eligible))'
+    - 'submission of proposals?'
+    - 'seeking (an? )?(training|assessment|implementation|mobili[sz]ation|knowledge|technology|industry|placement) (partners?|agenc(y|ies)|providers?|organi[sz]ations?)'
+    - 'invit(es|ing) (nominations|expressions?|applications|proposals)'
+    - 'interested (training partners?|agencies|organi[sz]ations|parties|firms|vendors)'
+    - '\bpias?\b'
+    - 'accreditation of (training|assessment)'
+  Recruitment:
+    - vacanc
+    - recruit
+    - '\bcareers?\b'
+    - '\bhiring\b'
+    - '\bjobs?\b(?![\s_-]*roles?)'
+    - 'walk[- ]?in'
+    - 'engagement of (an? )?(professionals?|consultants?|experts?|trainers?|young professionals?|interns?)'
+    - 'freelance'
+    - 'internship'
+    - 'position of'
+    - 'call for (nominations?|experts?|resource persons?|mentors?)'
+    - भर्ती
+  Notice:
+    - '\bnotices?\b'
+    - circular
+    - notification
+    - advisory
+    - '\border\b'
+    - 'office memorandum'
+    - blacklist
+    - 'de-?empanel'
+    - debar
+    - caution
+    - guideline
+    - 'public info'
+    - सूचना
+    - अधिसूचना
+    - परिपत्र
+    - आदेश
+  ToT-ToA/Result:
+    - '\bresults?\b'
+    - '\btot\b'
+    - '\btoa\b'
+    - '\btomt\b'
+    - '\btoma\b'
+    - '\bcalendar\b'
+    - 'assessment (schedule|date)'
+  News:
+    - newsletter
+    - '\bnews\b'
+    - 'press release'
+    - 'press coverage'
+    - '\bevents?\b'
+    - magazine
+    - '\bblogs?\b'
+    - webinar
+    - conclave
+    - 'in the news'
+
+# Items matching these are stored but treated as "Other" (not shown in the main sheets).
+# Checked before the categories above, but a tender-type match in the link text still wins.
+other_patterns:
+  - 'qualification[-_ ]pack'
+  - '\bqps?\b'
+  - '\bnos\b'
+  - '[a-z]{3}[-_ /]?q\d{4}'
+  - 'model[-_ ]curriculum'
+  - brochure
+  - 'hand[-_ ]?book'
+  - 'participant[-_ ]handbook'
+  - 'facilitator[-_ ]guide'
+  - '\blogo\b'
+  - 'privacy[-_ ]policy'
+  - 'terms (of use|and conditions)'
+  - 'question[-_ ]bank'
+  - 'annual[-_ ]report'
+  - 'membership[-_ ]form'
+  - 'certificate[-_ ]download'
+  - '\bgallery\b'
+
+# Tender-type categories (used for the Tenders sheet, downloads and AI reading).
+tender_categories: [Tender, RFP, EOI, Empanelment, Corrigendum]
+
+# Words that make an item more relevant for the company profile (see settings.yaml).
+relevance_high:
+  - 'assessment agenc'
+  - 'assessment bod'
+  - '\baas?\b'
+  - '\bpmkvy\b'
+  - '\brpl\b'
+  - 'recognition of prior learning'
+  - 'assessor'
+  - 'empanelment of assessment'
+  - 'third.party assessment'
+  - '\bcbt\b'
+  - 'conduct(ing)? of (online |cbt )?exam'
+  - 'proctor'
+relevance_medium:
+  - 'skill gap'
+  - 'content development'
+  - 'question bank'
+  - 'third.party (monitoring|verification)'
+  - 'impact assessment'
+  - 'training'
+  - 'skill'
+  - 'survey'
+  - 'study'
+  - 'audit'
+  - 'consult'
+  - 'event'
+  - 'printing'
+  - 'it (services|agency|solution)'
+
+# Link texts that say nothing about the document; such documents are opened and read to classify them.
+vague_titles:
+  - '^(click here|click|here|download|download here|download pdf|view|view more|view details|read more|more|details|pdf|open|link|notice|public notice|important notice|document|file|new|latest|attachment)$'
+  - '^(apply|apply now|apply here|click to apply|register|register now|submit|submit now|fill (the )?form|form|form link|google form|know more|learn more)$'
+  - '^[\W\d_]*$'
+
+# Phrases that, when found inside a document, mark it as tender-type.
+content_phrases:
+  EOI: ['expression of interest', 'expressions of interest']
+  RFP: ['request for proposal', 'request for quotation', 'technical bid', 'financial bid', 'technical proposal', 'financial proposal']
+  Tender: ['tender document', 'notice inviting tender', 'earnest money deposit', 'bid security', 'bid submission', 'tender fee']
+  Empanelment: ['empanelment of', 'applications are invited from', 'proposals are invited', 'last date (of|for) submission of (proposal|application|bid)']
+  Corrigendum: ['corrigendum', 'addendum', 'extension of last date', 'last date has been extended']
+
+# URL parts the crawler never follows.
+crawl_exclude:
+  - '/wp-admin'
+  - '/wp-login'
+  - 'xmlrpc.php'
+  - '/feed/?$'
+  - '/comments/feed'
+  - '/wp-json/oembed'
+  - 'replytocom='
+  - '/tag/'
+  - '/author/'
+  - 'login'
+  - 'logout'
+  - 'signin'
+  - 'sign-in'
+  - 'register'
+  - '/cart'
+  - '/checkout'
+  - 'javascript:'
+  - 'mailto:'
+  - 'tel:'
+  - 'whatsapp:'
+  - '\.(jpe?g|png|gif|svg|webp|bmp|ico|mp4|mp3|avi|mov|wmv|css|js|woff2?|ttf|eot|map)(\?|$)'
+
+# Crawl these links earlier (priority queue).
+crawl_priority:
+  - 'tender|rfp|rfq|eoi|expression|empanel|procure|quotation|corrigend|bid'
+  - 'notice|circular|notification|announce|update|latest|what.?s.new|order'
+  - 'career|vacanc|recruit|job|advertis'
+  - 'news|press|download|resource|media|event'
+
+# External hosts whose links are recorded (never crawled) when they look relevant.
+external_doc_hosts:
+  - drive.google.com
+  - docs.google.com
+  - forms.gle
+  - forms.office.com
+  - gem.gov.in
+  - bidplus.gem.gov.in
+  - eprocure.gov.in
+  - zfrmz.in
+  - zoom.us

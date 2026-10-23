@@ -1,0 +1,71 @@
+# Runs the tracker every day on GitHub Actions.
+# Nothing happens until this folder is pushed to a GitHub repository and the secrets below are added
+# (repo -> Settings -> Secrets and variables -> Actions).
+#
+# Note: GitHub's servers are outside India; some government sites may block them. Check the
+# "Site Status" sheet after the first cloud run. A self-hosted runner in India avoids this.
+
+name: Daily SSC tender check
+
+on:
+  schedule:
+    - cron: "0 4 * * *"   # 04:00 UTC = 09:30 IST
+  workflow_dispatch:       # "Run workflow" button
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tender-tracker
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Run tracker
+        env:
+          TZ: Asia/Kolkata
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TRACKER_CLAUDE_MODEL: ${{ vars.TRACKER_CLAUDE_MODEL || 'claude-opus-5-5' }}
+          TRACKER_CLAUDE_EFFORT: ${{ vars.TRACKER_CLAUDE_EFFORT || 'low' }}
+          SMTP_HOST: ${{ vars.SMTP_HOST || 'smtp.gmail.com' }}
+          SMTP_PORT: ${{ vars.SMTP_PORT || '587' }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WINDOWS_TOAST: "false"
+        run: python -m tender_tracker
+
+      - name: Keep the database for tomorrow
+        if: always()
+        run: |
+          git config user.name "tender-tracker-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f data/tracker.db
+          git commit -m "Tracker database $(date +%F) [skip ci]" || echo "No changes"
+          git push
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ssc-tender-excel
+          path: |
+            output/**/*.xlsx
+            logs/
+          retention-days: 30

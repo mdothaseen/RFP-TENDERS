@@ -1,0 +1,19 @@
+[Unit]
+Description=SSC Watch bounded document OCR and AI worker
+After=network-online.target
+[Service]
+Type=oneshot
+User=tendertracker
+WorkingDirectory=/opt/tender-tracker
+Environment=TZ=Asia/Kolkata
+Environment=WINDOWS_TOAST=false
+EnvironmentFile=-/etc/tender-tracker.env
+ExecStart=/opt/tender-tracker/.venv/bin/python -m tender_tracker --enrich --workers 2
+SuccessExitStatus=3
+TimeoutStartSec=35min
+Nice=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/tender-tracker
+MemoryMax=1536M

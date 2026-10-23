@@ -1,0 +1,17 @@
+[Unit]
+Description=SSC Watch durable email and Telegram retries
+After=network-online.target
+[Service]
+Type=oneshot
+User=tendertracker
+WorkingDirectory=/opt/tender-tracker
+Environment=TZ=Asia/Kolkata
+Environment=WINDOWS_TOAST=false
+EnvironmentFile=-/etc/tender-tracker.env
+ExecStart=/opt/tender-tracker/.venv/bin/python -m tender_tracker --drain-outbox
+TimeoutStartSec=5min
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/tender-tracker
+MemoryMax=256M

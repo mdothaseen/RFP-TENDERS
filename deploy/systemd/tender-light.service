@@ -1,0 +1,19 @@
+[Unit]
+Description=SSC Watch frequent listing and document version check
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=oneshot
+User=tendertracker
+WorkingDirectory=/opt/tender-tracker
+Environment=TZ=Asia/Kolkata
+Environment=WINDOWS_TOAST=false
+EnvironmentFile=-/etc/tender-tracker.env
+ExecStart=/opt/tender-tracker/.venv/bin/python -m tender_tracker --light --defer-enrichment
+SuccessExitStatus=2 3
+TimeoutStartSec=20min
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/tender-tracker
+MemoryMax=768M

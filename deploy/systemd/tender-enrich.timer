@@ -1,0 +1,7 @@
+[Unit]
+Description=Process saved document backlog without delaying scans
+[Timer]
+OnBootSec=3min
+OnUnitInactiveSec=5min
+[Install]
+WantedBy=timers.target

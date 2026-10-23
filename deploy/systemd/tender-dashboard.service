@@ -1,0 +1,20 @@
+[Unit]
+Description=SSC Watch private dashboard
+After=network.target
+[Service]
+Type=simple
+User=tendertracker
+WorkingDirectory=/opt/tender-tracker
+Environment=TZ=Asia/Kolkata
+Environment=WINDOWS_TOAST=false
+EnvironmentFile=-/etc/tender-tracker.env
+ExecStart=/opt/tender-tracker/.venv/bin/python -m tender_tracker --serve
+Restart=on-failure
+RestartSec=10s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/tender-tracker
+MemoryMax=256M
+[Install]
+WantedBy=multi-user.target

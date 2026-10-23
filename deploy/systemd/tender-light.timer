@@ -1,0 +1,8 @@
+[Unit]
+Description=Check SSC priority pages every 15 minutes
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=15min
+RandomizedDelaySec=15
+[Install]
+WantedBy=timers.target
