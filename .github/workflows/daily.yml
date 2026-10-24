@@ -8,9 +8,9 @@
 name: Daily SSC tender check
 
 on:
-  schedule:
-    - cron: "0 4 * * *"   # 04:00 UTC = 09:30 IST
-  workflow_dispatch:       # "Run workflow" button
+  # Automatic daily runs are off: the tracker runs on the VPS (see deploy/). Two trackers would send
+  # duplicate emails. Only the manual "Run workflow" button is left.
+  workflow_dispatch:
 
 permissions:
   contents: write
