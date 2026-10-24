@@ -891,3 +891,9 @@ sites:
     name: "LPG Vitrak Chayan"
     url: https://www.lpgvitarakchayan.in/
     seeds: []
+
+  - code: PPDC
+    name: "Petrol Pump Dealer Chayan (PPDC)"
+    url: https://www.petrolpumpdealerchayan.in/
+    js: true
+    seeds: []
