@@ -191,46 +191,6 @@ def build_email(report: dict, run, problems: list[str], ai_summary: dict | None,
         + "</tr></table></td></tr>",
     ]
 
-    if new_tenders:
-        def tender_rows(items):
-            out = []
-            for r in items:
-                detail = _title(r)
-                extra = r.get("action") or r.get("who") or ""
-                if extra:
-                    detail += f"<div style='color:{MUTED};font-size:12px;margin-top:6px'>{esc(extra[:180])}</div>"
-                out.append([_chip(r["org"], True), _chip(r["category"]), detail, _uploaded(r),
-                            _fmt(r["last_date"]), _days_left(r["last_date"], today), _pill(r["relevance"])])
-            return out
-
-        headers = ["Org", "Type", "Title / what to do", "Uploaded on", "Last date", "Time left", "Relevance"]
-        widths = ["8%", "9%", "39%", "12%", "12%", "9%", "11%"]
-        # Relevance groups: the reader starts with what fits the company; Low is only counted.
-        groups = [
-            ("High", "&#128308; For you: high relevance", "Matches your work directly. Review these first."),
-            ("Medium", "&#128993; Maybe for you: medium relevance", "Related work you could bid for."),
-        ]
-        for level, heading, note in groups:
-            items = [r for r in new_tenders if r["relevance"] == level]
-            if not items:
-                continue
-            shown = items[:25]
-            subtitle = note + " Click a title to open the document."
-            if len(items) > len(shown):
-                subtitle += f" Showing {len(shown)} of {len(items)}; the rest are in the attached Excel."
-            rows.append(_section_html(heading, subtitle))
-            rows.append(_table(headers, tender_rows(shown), widths))
-        rest = [r for r in new_tenders if r["relevance"] not in ("High", "Medium")]
-        if rest or already_closed:
-            bits = []
-            if rest:
-                bits.append(f"<b>{len(rest)}</b> new tender{'s' if len(rest) != 1 else ''} with low or no relevance")
-            if already_closed:
-                bits.append(f"<b>{len(already_closed)}</b> with a last date already passed")
-            rows.append(f"<tr><td style='padding:16px 28px 0 28px'><div style='background:#F8FAFC;border:1px solid "
-                        f"{BORDER};border-radius:12px;padding:12px 16px;font-size:13px;color:{MUTED}'>&#9898; "
-                        f"{' and '.join(bits)}: not listed here, all of them are in the attached Excel.</div></td></tr>")
-
     if closing:
         rows.append(_section(f"Closing within {closing_days} days", "Tenders already announced earlier."))
         rows.append(_table(["Org", "Title", "Uploaded on", "Last date", "Time left", "Relevance"], [
@@ -238,27 +198,65 @@ def build_email(report: dict, run, problems: list[str], ai_summary: dict | None,
              _days_left(r["last_date"], today), _pill(r["relevance"])] for r in closing[:15]],
             ["9%", "45%", "13%", "13%", "10%", "10%"]))
 
-    if other_new:
-        by_cat: dict[str, list[dict]] = {}
-        for r in other_new:
-            by_cat.setdefault(r["category"], []).append(r)
-        cat_rows = []
-        for cat, items in sorted(by_cat.items(), key=lambda kv: -len(kv[1])):
-            examples = "<br>".join(f"<span style='color:{MUTED}'>{esc(r['org'])}:</span> {esc(r['title'][:90])}"
-                                   for r in items[:2])
-            cat_rows.append([f"<b>{esc(cat)}</b>", f"<b>{len(items)}</b>", examples])
-        rows.append(_section("Other new updates", "Notices, circulars, recruitment, ToT/ToA and news (for information)."))
-        rows.append(_table(["Type", "Count", "Examples"], cat_rows, ["20%", "10%", "70%"]))
+    # One block per organisation: its new tenders and its other updates together, with the usual columns.
+    headers = ["Org", "Type", "Title / what to do", "Uploaded on", "Last date", "Time left", "Relevance"]
+    widths = ["8%", "9%", "39%", "12%", "12%", "9%", "11%"]
 
-    orgs: dict[str, list[int]] = {}
-    for r in report["new"]:
-        entry = orgs.setdefault(r["org"], [0, 0])
-        entry[0 if r["tender"] else 1] += 1
-    if orgs and not baseline:
-        rows.append(_section("New items by organisation"))
-        rows.append(_table(["Org", "New tenders", "Other updates"], [
-            [f"<b>{esc(org)}</b>", str(c[0]), str(c[1])]
-            for org, c in sorted(orgs.items(), key=lambda kv: (-kv[1][0], -kv[1][1]))], ["40%", "30%", "30%"]))
+    def item_row(r: dict) -> list[str]:
+        detail = _title(r)
+        extra = r.get("action") or r.get("who") or ""
+        if extra:
+            detail += f"<div style='color:{MUTED};font-size:12px;margin-top:6px'>{esc(extra[:180])}</div>"
+        return [_chip(r["org"], True), _chip(r["category"]), detail, _uploaded(r),
+                _fmt(r["last_date"]), _days_left(r["last_date"], today), _pill(r["relevance"])]
+
+    relevant = [r for r in new_tenders if r["relevance"] in ("High", "Medium")]
+    low = [r for r in new_tenders if r["relevance"] not in ("High", "Medium")]
+    by_org: dict[str, list[dict]] = {}
+    for r in relevant + other_new:
+        by_org.setdefault(r["org"], []).append(r)
+
+    def org_rank(item):
+        org, items = item
+        tenders = [r for r in items if r["tender"]]
+        return (-sum(r["relevance"] == "High" for r in tenders), -len(tenders), -len(items), org)
+
+    if by_org:
+        ordered = sorted(by_org.items(), key=org_rank)
+        shown_orgs = ordered[:20]
+        subtitle = ("Each organisation's new tenders and updates together. Organisations with high-relevance "
+                    "tenders come first. Click a title to open the document.")
+        if len(ordered) > len(shown_orgs):
+            subtitle += f" Showing {len(shown_orgs)} of {len(ordered)} organisations; the rest are in the attached Excel."
+        rows.append(_section("New by organisation", subtitle))
+        for org, items in shown_orgs:
+            items.sort(key=lambda r: (not r["tender"], rank.get(r["relevance"], 3),
+                                      (r["last_date"] or date.max).toordinal()))
+            n_t = sum(r["tender"] for r in items)
+            n_u = len(items) - n_t
+            counts = " · ".join(x for x in (
+                f"{n_t} tender{'s' if n_t != 1 else ''}" if n_t else "",
+                f"{n_u} update{'s' if n_u != 1 else ''}" if n_u else "") if x)
+            name = items[0].get("org_name") or org
+            rows.append(f"<tr><td style='padding:18px 28px 8px 28px'><div style='font-size:15px;font-weight:700;"
+                        f"color:{INK}'>{esc(org)} <span style='font-weight:400;color:{MUTED};font-size:13px'>"
+                        f"&nbsp;{esc(name if name != org else '')}{' &#183; ' if name != org else ''}{esc(counts)}"
+                        f"</span></div></td></tr>")
+            shown = items[:10]
+            rows.append(_table(headers, [item_row(r) for r in shown], widths))
+            if len(items) > len(shown):
+                rows.append(f"<tr><td style='padding:6px 28px 0 28px;font-size:12px;color:{MUTED}'>"
+                            f"+ {len(items) - len(shown)} more from {esc(org)} in the attached Excel.</td></tr>")
+
+    if low or already_closed:
+        bits = []
+        if low:
+            bits.append(f"<b>{len(low)}</b> new tender{'s' if len(low) != 1 else ''} with low or no relevance")
+        if already_closed:
+            bits.append(f"<b>{len(already_closed)}</b> with a last date already passed")
+        rows.append(f"<tr><td style='padding:16px 28px 0 28px'><div style='background:#F8FAFC;border:1px solid "
+                    f"{BORDER};border-radius:12px;padding:12px 16px;font-size:13px;color:{MUTED}'>&#9898; "
+                    f"{' and '.join(bits)}: not listed here, all of them are in the attached Excel.</div></td></tr>")
 
     notes = []
     if problems:

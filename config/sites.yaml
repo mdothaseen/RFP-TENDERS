@@ -422,9 +422,9 @@ sites:
     name: "Directorate General of Training (DGT)"
     url: https://dgt.gov.in/
     seeds:
-      - https://dgt.gov.in/hi/tender-notices
-      - https://dgt.gov.in/hi/pm-setu-tender-notices
-      - https://dgt.gov.in/hi/pm-setu-states/uts-clusters-rfps
+      - https://dgt.gov.in/en/tender-notices
+      - https://dgt.gov.in/en/pm-setu-tender-notices
+      - https://dgt.gov.in/en/pm-setu-states/uts-clusters-rfps
 
   - code: NIOS
     name: "National Institute of Open Schooling (NIOS)"
@@ -885,4 +885,9 @@ sites:
   - code: NBSE
     name: "Nagaland Board of School Education"
     url: https://nbsenl.edu.in/
+    seeds: []
+  
+  - code: LPGVC
+    name: "LPG Vitrak Chayan"
+    url: https://www.lpgvitarakchayan.in/
     seeds: []

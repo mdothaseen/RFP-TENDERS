@@ -177,6 +177,10 @@ content_phrases:
 
 # URL parts the crawler never follows.
 crawl_exclude:
+  # Hindi versions of bilingual sites: the English pages carry the same notices.
+  - '/hi/'
+  - '/hindi/'
+  - '[?&]lang(uage)?=(hi|hin)'
   - '/wp-admin'
   - '/wp-login'
   - 'xmlrpc.php'

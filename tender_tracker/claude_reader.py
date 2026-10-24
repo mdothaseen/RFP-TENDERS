@@ -22,7 +22,7 @@ PROMPT = f"""You are the document reader of the SSC Tender Tracker (folder: {ROO
 Open data/ai_queue.json. It has `company_profile`, `instructions`, `fields` (field -> meaning) and `items`.
 For every item, read the file in `read_this_file` (document text, or a scanned PDF when `file_is_scanned_pdf`
 is true - for long documents the first ~30 pages are enough) and fill ALL fields, following `instructions`:
-- Only what the document says; unknown = "". Dates YYYY-MM-DD, times HH:MM (24h); a corrigendum's new date wins.
+- Write every field in English (title too: translate a Hindi title into English). Only what the document says; unknown = "". Dates YYYY-MM-DD, times HH:MM (24h); a corrigendum's new date wins.
 - last_date_submission = final date to submit the bid/proposal/application (not pre-bid/opening).
 - Amounts exactly as written with currency. doc_type: one of Tender, RFP, RFQ, EOI, Empanelment, Corrigendum,
   Notice, Circular, Recruitment, Result, Other.
