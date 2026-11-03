@@ -327,6 +327,16 @@ QUEUE_FILE = ROOT / "data" / "ai_queue.json"
 RESULTS_FILE = ROOT / "data" / "ai_results.json"
 
 
+def past_decisions(store, sites: dict, per_kind: int = 15) -> dict[str, list[str]]:
+    """The user's latest dashboard choices, so the reader learns what CeeVision wants."""
+    def titles(statuses: str) -> list[str]:
+        rows = store.db.execute(f"SELECT site_code, title FROM items WHERE user_status IN ({statuses}) "
+                                "AND title IS NOT NULL ORDER BY id DESC LIMIT ?", (per_kind,)).fetchall()
+        return [f"{sites[r['site_code']].name if r['site_code'] in sites else r['site_code']}: {r['title'][:200]}"
+                for r in rows]
+    return {"wanted": titles("'interested','applied'"), "not_wanted": titles("'ignore'")}
+
+
 def export_queue(store, settings: Settings, sites: dict, today: date) -> int:
     """Write data/ai_queue.json: the documents the Claude app should read, with instructions and fields."""
     rows = select_items(store, settings, False, today)
@@ -351,6 +361,7 @@ def export_queue(store, settings: Settings, sites: dict, today: date) -> int:
     payload = {
         "created": datetime.now().isoformat(timespec="seconds"),
         "company_profile": settings.company_profile,
+        "past_decisions": past_decisions(store, sites),
         "instructions": [
             "Read each file in read_this_file and fill every field listed in 'fields' for that item.",
             "Use only what the document says; unknown fields = empty string.",

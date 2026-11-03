@@ -17,7 +17,7 @@ from .health import snapshot
 from .store import Store
 
 log = logging.getLogger(__name__)
-STATUSES = {"new", "seen", "applied", "ignore"}
+STATUSES = {"new", "seen", "interested", "applied", "ignore"}
 
 
 def data(store, settings, keywords, sites, query: dict) -> dict:
@@ -121,7 +121,7 @@ def handler(db_path: Path, settings, keywords, sites: dict, username: str, passw
                 if parts[3] == "status":
                     status = payload.get("status")
                     if status not in STATUSES:
-                        raise ValueError("Choose new, seen, applied or ignore")
+                        raise ValueError("Choose new, seen, interested, applied or ignore")
                     store.update_item(item_id, user_status=status)
                 else:
                     related = int(payload["related_item_id"]) if payload.get("related_item_id") else None

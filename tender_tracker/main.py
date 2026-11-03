@@ -137,7 +137,16 @@ def _pid_alive(pid: int) -> bool:
         return False
     try:
         code = wintypes.DWORD()
-        return bool(kernel32.GetExitCodeProcess(handle, ctypes.byref(code))) and code.value == 259  # STILL_ACTIVE
+        if not (kernel32.GetExitCodeProcess(handle, ctypes.byref(code)) and code.value == 259):  # STILL_ACTIVE
+            return False
+        # On Windows, PIDs get reused by unrelated system/user processes after Python exits.
+        # Verify that the active process is actually python.
+        buf = ctypes.create_unicode_buffer(1024)
+        size = wintypes.DWORD(1024)
+        if kernel32.QueryFullProcessImageNameW(handle, 0, buf, ctypes.byref(size)):
+            exe_name = Path(buf.value).name.lower()
+            return exe_name.startswith("python")
+        return True
     finally:
         kernel32.CloseHandle(handle)
 
@@ -157,6 +166,11 @@ def _run_in_progress(path: Path | None = None) -> bool:
     if not probe.acquire():
         return True
     probe.release()
+    if path.exists():
+        try:
+            path.unlink(missing_ok=True)
+        except OSError:
+            pass
     return False
 
 
@@ -339,6 +353,10 @@ def _read_with_claude_plan(store: Store, settings, sites: dict, today: date) -> 
     expected = {int(r["id"]): int(r["revision"]) for r in queue["items"]}
     ok, message = read_queue(settings, timeout_minutes=int(settings.ai.get("timeout_minutes", 20)))
     log.info("Claude Code: %s", message)
+    # Kept until a later read works, so every summary email shows it.
+    store.kv_set("claude_problem", "Claude Code is not logged in: documents are waiting. Open a terminal, run "
+                 "`claude`, type /login and sign in." if "not logged in" in message.lower() else "")
+    store.commit()
     if ok:
         saved, problems = ai_extract.import_results(store, ai_extract.RESULTS_FILE, expected=expected)
         summary["done"] = saved
@@ -376,6 +394,9 @@ def _ask(settings) -> int:
 
 def _problems_from_history(store: Store, sites: dict) -> list[str]:
     problems = []
+    claude_problem = store.kv_get("claude_problem")
+    if claude_problem:
+        problems.append(claude_problem)
     for code in sites:
         hist = store.site_history(code, 1)
         if hist and hist[0]["status"] == "failed":
