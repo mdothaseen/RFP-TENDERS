@@ -86,6 +86,8 @@ class Keywords:
     crawl_exclude: list[re.Pattern]
     crawl_priority: list[re.Pattern]
     external_doc_hosts: list[str]
+    relevance_low: list[re.Pattern] = field(default_factory=list)
+    attachment_titles: list[re.Pattern] = field(default_factory=list)
 
 
 @dataclass
@@ -145,6 +147,8 @@ def load_keywords() -> Keywords:
         crawl_exclude=_compile(data.get("crawl_exclude")),
         crawl_priority=_compile(data.get("crawl_priority")),
         external_doc_hosts=[h.lower() for h in data.get("external_doc_hosts") or []],
+        relevance_low=_compile(data.get("relevance_low")),
+        attachment_titles=_compile(data.get("attachment_titles")),
     )
 
 

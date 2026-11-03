@@ -92,14 +92,30 @@ class SiteScan:
     finished: datetime | None = None
 
 
+MAX_TIMEOUTS_IN_ROW = 3
+_TIMEOUT = re.compile(r"timeout|timed[ _]out|ConnectionError|ERR_CONNECTION|ERR_NAME_NOT_RESOLVED", re.I)
+
+
 def _squash(text: str | None) -> str:
     return re.sub(r"\s+", " ", text or "").strip()
 
 
+# Listing details some sites print inside the link: "Size: 847 KB | Language: English | Uploading Date: 23-10-2026".
+_LISTING_NOISE = re.compile(r"\s*\|?\s*\b(size|file size|language|uploading date|upload date|downloads?)\s*:\s*[^|]*", re.I)
+_TRAILING_FORMAT = re.compile(r"\s*\|\s*format\b.*$", re.I)  # "RFP for Tura Cluster | Format"
+_FILE_PREFIX = re.compile(r"^\s*(pdf|docx?|xlsx?|zip)\s+file\s*:\s*", re.I)
+_STAMP_SUFFIX = re.compile(r"[-_ ]\d{12,14}$")  # "Tender documents-20261026100733"
+
+
 def _tidy_title(title: str) -> str:
-    t = re.sub(r"[_]+", " ", title or "")
+    t = (title or "").replace("�", "-")  # a character the site's encoding lost
+    t = re.sub(r"[_]+", " ", t)
+    t = _LISTING_NOISE.sub("", t)
+    t = _TRAILING_FORMAT.sub("", t)
+    t = _FILE_PREFIX.sub("", t)
+    t = _STAMP_SUFFIX.sub("", t.strip())
     t = re.sub(r"\s*-\s*-\s*", " - ", t)
-    return _squash(t).strip(" -")
+    return _squash(t).strip(" -|")
 
 
 class SiteScanner:
@@ -126,6 +142,8 @@ class SiteScanner:
         self.enqueued: set[str] = set()
         self.fetched: set[str] = set()
         self.counter = itertools.count()
+        self.dead_links = 0       # HTTP 404/410 on deep links: old links, not a broken site
+        self.timeouts_in_row = 0  # a site that stops answering is left for the next scan
         self.exclude = list(keywords.crawl_exclude) + [re.compile(re.escape(x), re.I) for x in site.exclude]
         self.record_categories = set(keywords.tender_categories) | {"Notice", "Recruitment"}
         self._main_host = site.host.removeprefix("www.")
@@ -152,9 +170,10 @@ class SiteScanner:
             self.scan.finished = datetime.now()
             self.scan.ssl_fallback = self.fetcher.ssl_fallback_used
             self.fetcher.session.close()
+        real_errors = self.scan.error_count - self.dead_links
         if not self.scan.items and self.scan.pages == 0:
             self.scan.status = "failed"
-        elif not home_ok or self.scan.error_count > max(5, self.scan.pages // 3):
+        elif not home_ok or real_errors > max(5, self.scan.pages // 3):
             self.scan.status = "partial"
         return self.scan
 
@@ -170,6 +189,10 @@ class SiteScanner:
         self.scan.error_count += 1
         if len(self.scan.errors) < 15:
             self.scan.errors.append(message[:220])
+
+    def _note_timeout(self, error: str | None) -> None:
+        if error and _TIMEOUT.search(error):
+            self.timeouts_in_row += 1
 
     def _excluded(self, url: str) -> bool:
         return any(p.search(url) for p in self.exclude)
@@ -206,6 +229,9 @@ class SiteScanner:
             if time.monotonic() - started > limit:
                 self._err(f"site time limit reached ({limit / 60:.0f} min); remaining pages next scan")
                 break
+            if self.timeouts_in_row >= MAX_TIMEOUTS_IN_ROW:
+                self._err(f"site stopped answering ({self.timeouts_in_row} timeouts in a row); rest next scan")
+                break
             _, _, url, depth, seed, text, source = heapq.heappop(self.queue)
             if self.robots is not None and not self.robots.allowed(url):
                 self.scan.robots_skipped += 1
@@ -233,14 +259,18 @@ class SiteScanner:
             self._add_doc_from_response(url, resp, text, source)
             return None
         if resp.error or resp.status is None:
+            self._note_timeout(resp.error)
             self._err(f"{url}: {resp.error}")
             return None
+        self.timeouts_in_row = 0
         if resp.looks_blocked or (is_home and resp.status in (403, 503)):
             log.info("[%s] blocked (HTTP %s) at %s - switching to browser", self.site.code, resp.status, url)
             self.use_js = True
             self.scan.method = "browser (site blocked plain requests)"
             return self._render(url)
         if resp.status != 200:
+            if resp.status in (404, 410) and not is_home:
+                self.dead_links += 1
             self._err(f"{url}: HTTP {resp.status}")
             return None
         html = resp.text
@@ -265,8 +295,12 @@ class SiteScanner:
         self.scan.rendered += 1
         if result.error or result.status != 200 or not result.html.strip() or Response(
                 url, result.final_url, result.status, content=result.html.encode("utf-8")).looks_blocked:
+            self._note_timeout(result.error)
+            if result.status in (404, 410) and url != self.site.url:
+                self.dead_links += 1
             self._err(f"{url}: {result.error or f'HTTP {result.status} / challenge page'}")
             return None
+        self.timeouts_in_row = 0
         self.scan.pages += 1
         return result.final_url, result.html
 

@@ -10,12 +10,18 @@ from urllib.parse import urlsplit
 
 from . import events
 from .changes import meaningful_diff
-from .classify import classify
+from .classify import Classification, classify, relevance
 from .discover.crawler import Found, SiteScan, scan_site
 from .excel_report import build_records
 from .store import Store
 
 log = logging.getLogger("tender_tracker")
+
+
+def page_change_class(keywords, snippet: str) -> Classification:
+    """A changed page is a Notice: its new links (tenders, corrigenda) are saved as their own items,
+    so the change itself is never counted as a new tender."""
+    return Classification("Notice", classify(keywords, snippet).matched, relevance(keywords, "Notice", snippet))
 
 
 def save_scan(store: Store, scan: SiteScan, keywords, run_id: int, baseline: bool, now: str,
@@ -42,7 +48,8 @@ def save_scan(store: Store, scan: SiteScan, keywords, run_id: int, baseline: boo
                 change = Found(key=f"change:{key}:{version}", site_code=scan.site.code, url=page_url,
                     title=title, link_text="", context=snippet, source_page=page_url, via={"change"}, linked=True,
                     is_document=False, published=today, date_source="page change")
-                item_id, is_new = store.upsert(change, classify(keywords, snippet, text[:2000]), run_id, baseline, now, ai_categories)
+                item_id, is_new = store.upsert(change, page_change_class(keywords, snippet), run_id, baseline, now,
+                                               ai_categories)
                 events.record_item_event(store, item_id, "page_changed", {"diff": snippet},
                                          event_key=f"page:{key}:{version}")
                 new += int(is_new)

@@ -40,13 +40,23 @@ def _first_category(keywords: Keywords, text: str, only: list[str] | None = None
 
 
 def relevance(keywords: Keywords, category: str, text: str) -> str:
+    """First guess before Claude reads the document (Claude's answer replaces it).
+
+    High   = the company's own work (relevance_high), in a tender-type item
+    Medium = work close to it (relevance_medium), or a tender whose title does not say what the work is
+    Low    = work the company does not do (relevance_low), and everything that is not tender-type
+    """
     high = any(p.search(text) for p in keywords.relevance_high)
     tender = category in keywords.tender_categories
-    if tender and high:
-        return "High"
-    if tender or high:
+    if high:
+        return "High" if tender else "Medium"
+    if not tender:
+        return "Low"
+    if any(p.search(text) for p in keywords.relevance_medium):
         return "Medium"
-    return "Low"
+    if any(p.search(text) for p in keywords.relevance_low):
+        return "Low"
+    return "Medium"
 
 
 def classify(keywords: Keywords, title: str, context: str = "", url: str = "") -> Classification:
@@ -57,6 +67,9 @@ def classify(keywords: Keywords, title: str, context: str = "", url: str = "") -
     everything = f"{head} {context or ''}"
     path = url.lower() if url else ""
 
+    # "Price Bid", "Declaration GST", "Annexure-II": parts of a tender listed next to it, not tenders themselves.
+    if any(p.search(title.strip()) for p in keywords.attachment_titles):
+        return Classification("Other", ["tender attachment"], "Low")
     category, hits = _first_category(keywords, head, keywords.tender_categories)
     if not category:
         if any(p.search(head) for p in keywords.other_patterns):

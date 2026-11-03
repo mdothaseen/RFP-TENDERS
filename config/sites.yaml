@@ -503,9 +503,9 @@ sites:
 
   - code: KSDC
     name: "Karnataka Skill Development Corporation"
-    url: https://kaushalkar.com/
-    js: true
+    url: https://kaushalkar.karnataka.gov.in/en
     seeds: []
+    notes: "kaushalkar.com no longer resolves (Nov 2026); English pages are under /en"
 
   - code: SVSU
     name: "Shri Vishwakarma Skill University (SVSU)"

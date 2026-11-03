@@ -18,6 +18,7 @@ from .store import Store
 from .system import internet_ok, keep_awake
 
 log = logging.getLogger("tender_tracker")
+MIN_OK_SHARE = 0.85  # a full scan counts as done when at least this share of websites was read fine
 
 
 def parse_args(argv=None):
@@ -40,6 +41,8 @@ def parse_args(argv=None):
     modes.add_argument("--health", action="store_true", help="print health JSON; add --notify for incident alerts")
     modes.add_argument("--backup", action="store_true", help="create and verify a database/files backup")
     modes.add_argument("--serve", action="store_true", help="serve authenticated dashboard on localhost")
+    modes.add_argument("--reclassify", action="store_true",
+                       help="apply the current keywords.yaml to every saved item (category, relevance, title)")
     modes.add_argument("--check-config", action="store_true", help="check VPS email/dashboard prerequisites without sending")
     modes.add_argument("--verify-backup", metavar="PATH", help="verify a snapshot directory")
     modes.add_argument("--restore-backup", metavar="PATH", help="restore a verified snapshot to --restore-to (new directory)")
@@ -130,15 +133,19 @@ def _maintenance(args, settings, keywords, sites) -> int:
         backup.restore_backup(Path(args.restore_backup), Path(args.restore_to))
         print(f"Restored to new directory: {args.restore_to}")
         return 0
-    needs_lock = args.enrich or args.backup
-    lock_path = DATA_DIR / ("enrich.lock" if args.enrich else "backup.lock")
+    needs_lock = args.enrich or args.backup or args.reclassify
+    lock_path = locking.LOCK if args.reclassify else DATA_DIR / ("enrich.lock" if args.enrich else "backup.lock")
     if needs_lock and not locking.acquire(lock_path):
         return 3
     try:
         store = Store(DB_PATH)
         try:
             today = date.today()
-            if args.drain_outbox:
+            if args.reclassify:
+                from .reclassify import reclassify
+                for change, count in reclassify(store, keywords, settings).most_common():
+                    print(f"{count:7d}  {change}")
+            elif args.drain_outbox:
                 print(json.dumps(events.drain_outbox(store)))
             elif args.health:
                 state = health.queue_health(store, sites, settings) if args.notify else health.snapshot(store, sites, settings)
@@ -178,7 +185,8 @@ def main(argv=None) -> int:
     setup_logging(args.verbose)
     settings, keywords, site_list = load_settings(), load_keywords(), load_sites()
     sites = {s.code: s for s in site_list}
-    if any((args.enrich, args.drain_outbox, args.health, args.backup, args.serve, args.verify_backup, args.restore_backup, args.check_config)):
+    if any((args.enrich, args.drain_outbox, args.health, args.backup, args.serve, args.verify_backup, args.restore_backup, args.check_config,
+            args.reclassify)):
         return _maintenance(args, settings, keywords, sites)
 
     if args.telegram_setup:
@@ -309,7 +317,9 @@ def _run(store: Store, settings, keywords, sites: dict, selected: dict, full_run
         notes = f"{minutes:.1f} min; failed: {', '.join(failed) or 'none'}"
         if ai_summary:
             notes += f"; AI read {ai_summary['done']}"
-        status = "partial" if any(s.status != "ok" for s in scans) else "done"
+        # One closed website must not mark the whole scan unfinished; the failed ones are listed in the email.
+        ok_share = sum(s.status == "ok" for s in scans) / max(1, len(scans))
+        status = "done" if ok_share >= MIN_OK_SHARE else "partial"
         store.finish_run(run_id, status, new_count, notes)
         if full_run and not args.light and status == "done":
             store.kv_set("last_full_run_date", today.isoformat())
