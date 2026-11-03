@@ -1,6 +1,7 @@
-# General settings. Secrets (API key, email password, Telegram token) go in the .env file, not here.
+# General settings. Secrets (email password, Telegram token) go in the .env file, not here.
 
-# Short description of your company. Claude uses it to mark each tender High / Medium / Low relevance.
+# Your company: what it does and does not do, and what counts as High / Medium / Low relevance.
+# Claude judges every tender only by this text, so another company can use the tracker by changing it.
 company_profile: >
   CeeVision, an ASSESSMENT AGENCY in India. It assesses and certifies candidates for Sector Skill
   Councils, NSDC, NCVET-recognised awarding bodies, state skill missions, universities and boards
@@ -57,22 +58,18 @@ documents:
     timeout_seconds: 90     # includes waiting for the OCR slot; incomplete work retries from the saved PDF
 
 ai:
-  # Who reads the documents:
-  #   claude_app = a logged-in Claude CLI reads them with your Claude plan (no tracker API calls)
-  #   api        = the tracker calls the Claude API itself (needs ANTHROPIC_API_KEY, billed separately)
-  reader: claude_app
+  # The documents are read by a logged-in Claude CLI with your Claude plan (no API key, no API bill).
   # Only documents first found on or after this date are read (older ones stay unread).
   read_from: 2026-10-02
   # Categories sent to Claude for detailed reading.
   categories: [Tender, RFP, EOI, Empanelment, Corrigendum]
   max_docs_per_run: 25
   baseline_days: 45          # first run: only documents from the last N days
-  recent_days: 120           # later runs: skip old documents that are found for the first time
+  recent_days: 120           # older tenders (and any whose last date passed) are not read or downloaded
   max_text_chars: 400000     # longer documents: first part only (marked in Excel)
   max_pdf_pages: 100         # scanned PDFs: first N pages only (marked in Excel)
   max_attempts: 3
   timeout_minutes: 20        # Claude CLI worker; scanning and email retries run separately on VPS
-  daily_cost_limit_usd: 2.0  # API mode: stop starting requests after recorded estimated cost reaches this
 
 excel:
   include_all: true         # every item found on the websites is in Excel (emails stay short)

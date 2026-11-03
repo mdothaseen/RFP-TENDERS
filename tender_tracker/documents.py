@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+from .ai_extract import STALE
 from .classify import classify, content_category, is_vague
 from .config import DATA_DIR, ROOT, TEXT_DIR, Keywords, Settings, Site, site_dir
 from .dates import parse_http_date
@@ -505,6 +506,8 @@ def plan_documents(store, settings: Settings, keywords: Keywords, today: date, d
         published = row["published_date"]
         recent = (published and published >= window.isoformat()) or (not published and row["linked_seen"])
         if not recent:
+            continue
+        if (row["ai_error"] or "").startswith(STALE):  # closed / too old: kept as a link, not downloaded
             continue
         category = row["content_category"] or row["category"]
         if row["is_document"]:

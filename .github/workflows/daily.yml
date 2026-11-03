@@ -39,9 +39,6 @@ jobs:
       - name: Run tracker
         env:
           TZ: Asia/Kolkata
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          TRACKER_CLAUDE_MODEL: ${{ vars.TRACKER_CLAUDE_MODEL || 'claude-opus-5-5' }}
-          TRACKER_CLAUDE_EFFORT: ${{ vars.TRACKER_CLAUDE_EFFORT || 'low' }}
           SMTP_HOST: ${{ vars.SMTP_HOST || 'smtp.gmail.com' }}
           SMTP_PORT: ${{ vars.SMTP_PORT || '587' }}
           SMTP_USER: ${{ secrets.SMTP_USER }}

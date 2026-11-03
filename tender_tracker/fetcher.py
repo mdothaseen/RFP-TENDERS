@@ -84,7 +84,8 @@ class Robots:
             return True
         try:
             return self._parser.can_fetch(USER_AGENT, url)
-        except Exception:  # noqa: BLE001 - a broken robots.txt must never stop the crawl
+        except Exception as exc:  # noqa: BLE001 - a broken robots.txt must never stop the crawl
+            log.debug("robots.txt check failed for %s (allowed): %s", url, exc)
             return True
 
     @property
@@ -93,7 +94,8 @@ class Robots:
             return []
         try:
             return list(self._parser.site_maps() or [])
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
+            log.debug("Sitemap lines in robots.txt unreadable: %s", exc)
             return []
 
 
@@ -240,6 +242,7 @@ class Fetcher:
         parser = RobotFileParser()
         try:
             parser.parse(resp.text.splitlines())
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
+            log.info("[%s] robots.txt could not be parsed, crawling without it: %s", self.site.code, exc)
             return Robots(None)
         return Robots(parser)

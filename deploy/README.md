@@ -30,11 +30,9 @@ budget, so the 15-minute listing interval is not a guarantee that every PDF is r
    Keep a separate verified backup before moving anything. Never discard the original laptop copy during setup.
 3. Copy `.env.example` to `.env`; configure SMTP + recipients and a unique `DASHBOARD_PASSWORD` of at least 12 chars.
    Secrets stay in `.env` with mode 600. `/etc/tender-tracker.env` can optionally supply overriding service variables.
-4. Choose `ai.reader` in `config/settings.yaml`. Existing `claude_app` mode requires a supported Claude CLI installation
-   and login **for the `tendertracker` service user**, available via PATH or `ai.claude_command`. Do not copy Windows
-   authentication files to Linux. Alternatively configure API mode and an API key; billing is separate. Scans/alerts
-   work without AI. `ai.daily_cost_limit_usd` stops starting API requests after recorded estimated cost reaches its
-   threshold; it is not a provider billing hard cap and one request may exceed the remaining estimate.
+4. Documents are read by the Claude CLI with the Claude plan (no API key). Install it and log in **as the
+   `tendertracker` service user**, available via PATH or `ai.claude_command`. Do not copy Windows authentication
+   files to Linux. Scans/alerts work without AI; a logged-out CLI is reported in every summary email.
 5. Run `sudo sh /opt/tender-tracker/deploy/install.sh` on the VPS. It installs Python/browser dependencies, checks
    prerequisites, installs units and starts timers. It does not send a test message itself, but enabled monitoring
    jobs will send detected alerts to the configured recipients. Installation needs network/package permissions.

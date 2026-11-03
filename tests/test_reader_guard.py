@@ -4,7 +4,7 @@ import json
 import subprocess
 from datetime import date, datetime
 
-from tender_tracker import ai_extract, claude_reader, main
+from tender_tracker import ai_extract, alerts, claude_reader, enrich
 from tender_tracker.classify import classify
 from tender_tracker.config import Site, load_keywords, load_settings
 from tender_tracker.dashboard import STATUSES
@@ -50,12 +50,12 @@ def test_logout_alert_shows_until_a_read_works(tmp_path, monkeypatch):
 
     monkeypatch.setattr(claude_reader, "read_queue", lambda settings, timeout_minutes: (
         False, "Claude Code stopped with an error: Claude Code is not logged in. Please run /login"))
-    main._read_with_claude_plan(store, load_settings(), {"TST": SITE}, date(2026, 11, 4))
-    assert any("/login" in p for p in main._problems_from_history(store, {"TST": SITE}))
+    enrich.read_with_claude_plan(store, load_settings(), {"TST": SITE}, date(2026, 11, 4))
+    assert any("/login" in p for p in alerts.problems_from_history(store, {"TST": SITE}))
 
     monkeypatch.setattr(claude_reader, "read_queue", lambda settings, timeout_minutes: (False, "timed out"))
-    main._read_with_claude_plan(store, load_settings(), {"TST": SITE}, date(2026, 11, 4))
-    assert not any("/login" in p for p in main._problems_from_history(store, {"TST": SITE}))
+    enrich.read_with_claude_plan(store, load_settings(), {"TST": SITE}, date(2026, 11, 4))
+    assert not any("/login" in p for p in alerts.problems_from_history(store, {"TST": SITE}))
     store.close()
 
 

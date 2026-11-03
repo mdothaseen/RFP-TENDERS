@@ -43,11 +43,10 @@ Python aur packages is folder ke `.venv` mein pehle se install hain. Aapko sirf 
 
 `.env.example` ko copy karke usi folder mein `.env` naam se save karein. Is file mein passwords aur keys hote hain, ise kisi ko na bhejein.
 
-**2. Claude API key** (documents padhne ke liye)
-- https://console.anthropic.com par login karein. **API Keys** mein jaakar **Create Key** karein.
-- Key ko `.env` mein `ANTHROPIC_API_KEY=` ke aage paste karein.
-- **Billing** mein credit add karein.
-- Key na ho to bhi tracker chalega, bas AI details (last date, EMD, summary) khaali rahengi.
+**2. Claude login** (documents padhne ke liye, koi API key nahi)
+- Terminal mein `claude` chalayein, `/login` likhein aur apne Claude plan se sign in karein.
+- Documents aapke Claude plan se padhe jaate hain; alag API bill nahi aata.
+- Login na ho to bhi tracker chalega; email ke Notes mein "Claude Code is not logged in" aayega.
 
 **3. Email** (Gmail)
 - Google Account → **Security** → **2-Step Verification** on karein → **App passwords** mein naya password banayein.
@@ -228,13 +227,13 @@ Kuch sites koi date nahi batati; wahan yeh column khaali rehta hai.
 
 - **Site Status mein "failed"**: website band ho sakti hai ya URL badal gaya ho. Browser mein kholkar dekhein, zarurat ho to `sites.yaml` mein URL theek karein.
 - **Email nahi aaya**: `--test-notify` chalayein; Gmail ka *app password* hi use karein, normal password nahi.
-- **AI details khaali hain**: `.env` mein `ANTHROPIC_API_KEY` check karein; Excel ke *Notes* column mein reason likha hota hai.
+- **AI details khaali hain**: terminal mein `claude` chalakar login check karein; Excel ke *Notes* column mein reason likha hota hai. Jin tenders ki last date nikal chuki hai ya jo bahut purane hain, unhe Claude nahi padhta.
 
 ## GitHub par shift karna (baad mein)
 
 `.github/workflows/daily.yml` taiyaar hai.
 1. Folder ko GitHub repo mein push karein. `.env` push nahi hoti.
-2. Repo → **Settings → Secrets and variables → Actions** mein ye secrets daalein: `ANTHROPIC_API_KEY`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_TO`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`.
+2. Repo → **Settings → Secrets and variables → Actions** mein ye secrets daalein: `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_TO`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`.
 
 Workflow roz 09:30 IST chalega:
 - Database repo mein save karega.

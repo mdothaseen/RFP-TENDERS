@@ -15,7 +15,7 @@ from types import SimpleNamespace
 import pytest
 import requests
 
-from tender_tracker import backup, changes, dashboard, events, health, main
+from tender_tracker import backup, changes, dashboard, enrich, events, health, main, scanning
 from tender_tracker.ai_extract import import_results
 from tender_tracker.classify import classify
 from tender_tracker.config import Site, load_keywords, load_settings
@@ -273,8 +273,8 @@ def test_light_mode_skips_bulk_discovery(ctx, monkeypatch):
 def test_light_scan_ignores_daily_guard_and_never_calls_ai(ctx, monkeypatch):
     item(ctx)
     args = main.parse_args(["--light", "--no-download", "--no-notify"])
-    monkeypatch.setattr(main, "_scan", lambda *args, **kwargs: (0, [SiteScan(ctx.site, pages=1, finished=NOW)]))
-    monkeypatch.setattr(main, "_enrich", lambda *args: pytest.fail("AI/OCR cannot run in light scan"))
+    monkeypatch.setattr(scanning, "scan_sites", lambda *args, **kwargs: (0, [SiteScan(ctx.site, pages=1, finished=NOW)]))
+    monkeypatch.setattr(enrich, "enrich", lambda *args: pytest.fail("AI/OCR cannot run in light scan"))
     ctx.store.kv_set("last_full_run_date", TODAY.isoformat())
     assert main._run(ctx.store, ctx.settings, ctx.kw, ctx.sites, ctx.sites, True, args, TODAY) == 0
     assert ctx.store.db.execute("SELECT mode FROM runs ORDER BY id DESC").fetchone()[0] == "light"
@@ -286,12 +286,12 @@ def test_discovery_alert_is_saved_before_ai_failure(ctx, monkeypatch):
     found = Found(key="new", site_code="TST", url="https://t.example.org/new.pdf", title="EOI for Assessment Agencies",
                   link_text="EOI for Assessment Agencies", context="", source_page=ctx.site.url,
                   via={"page"}, linked=True, is_document=True, file_ext="pdf", published=TODAY)
-    monkeypatch.setattr(main, "scan_site", lambda *args, **kwargs: SiteScan(ctx.site, items={"new": found}, pages=1, finished=NOW))
+    monkeypatch.setattr(scanning, "scan_site", lambda *args, **kwargs: SiteScan(ctx.site, items={"new": found}, pages=1, finished=NOW))
     monkeypatch.setattr(events, "drain_outbox", lambda *args, **kwargs: {})
     def failure(*args):
         assert ctx.store.db.execute("SELECT COUNT(*) FROM notification_outbox").fetchone()[0] > 0
         raise RuntimeError("AI unavailable")
-    monkeypatch.setattr(main, "_enrich", failure)
+    monkeypatch.setattr(enrich, "enrich", failure)
     assert main._run(ctx.store, ctx.settings, ctx.kw, ctx.sites, ctx.sites, True, args, TODAY) == 1
     assert ctx.store.db.execute("SELECT COUNT(*) FROM notification_outbox WHERE status='pending'").fetchone()[0] > 0
 
@@ -463,7 +463,7 @@ def test_delayed_crawl_cannot_overwrite_newer_page_snapshot(ctx):
     scan = SiteScan(ctx.site)
     scan.page_texts[key] = (ctx.site.url, "EOI deadline 23 October")
     scan.page_observed[key] = (NOW - timedelta(minutes=5)).isoformat()
-    main._save_scan(ctx.store, scan, ctx.kw, 2, False, NOW.isoformat(), set(ctx.kw.tender_categories), TODAY)
+    scanning.save_scan(ctx.store, scan, ctx.kw, 2, False, NOW.isoformat(), set(ctx.kw.tender_categories), TODAY)
     saved = ctx.store.db.execute("SELECT text FROM page_texts WHERE key=?", (key,)).fetchone()[0]
     assert saved == "EOI deadline 30 October"
     assert ctx.store.db.execute("SELECT COUNT(*) FROM change_events").fetchone()[0] == 0
@@ -497,7 +497,7 @@ def test_changed_bytes_during_missing_file_recovery_invalidate_old_ai(ctx, monke
         on_result(item_id, fields)
         return [(item_id, fields)]
     monkeypatch.setattr(documents, "run_documents", recover)
-    assert main._documents(ctx.store, ctx.settings, ctx.kw, ctx.sites, TODAY, 1) == 1
+    assert enrich.process_documents(ctx.store, ctx.settings, ctx.kw, ctx.sites, TODAY, 1) == 1
     revised = ctx.store.item(item_id)
     assert revised["revision"] == 1 and revised["ai_json"] is None and revised["ai_status"] == "pending"
     assert ctx.store.db.execute("SELECT COUNT(*) FROM change_events WHERE kind='document_changed'").fetchone()[0] == 1
