@@ -19,6 +19,9 @@ KW = load_keywords()
     ("OFFICE ORDER : Onboarding of Assessment Agencies", "Empanelment", "High"),
     ("EOI-TPA-Empanelement.pdf", "EOI", "High"),
     ("RFP for Skill Gap Study in Odisha", "RFP", "Medium"),
+    ("EoI for Empanelment of Bihar Based Training Providers", "EOI", "High"),
+    ("27 Oct 2026 Vendor Request for Proposal for training of beneficiaries in Beauty & Wellness", "RFP", "High"),
+    ("RFP for the Skill Development Training Programme under the REC CSR initiative.", "RFP", "High"),
     ("NIT- OAW-2333", "Tender", "Medium"),  # title says nothing: stays visible until Claude reads it
     ("Repairing and Repainting of STUDENTS' ROOMs for winter vacation 2026 in VARIOUS hostels of IITG", "Tender", "Low"),
     ("Quotation for Purchase of Drawing Board", "RFP", "Low"),
@@ -118,3 +121,47 @@ def test_reclassify_applies_new_rules_to_saved_items(tmp_path):
     assert bid["category"] == "Other" and bid["ai_status"] == "skipped"
     assert repair["relevance"] == "Low"
     assert aa["relevance"] == "High" and aa["ai_status"] == "pending"
+
+
+def test_same_file_under_two_addresses_is_listed_once(tmp_path):
+    from tender_tracker.duplicates import file_identity, mark_duplicates
+    assert file_identity("https://svsu.ac.in/index.php/cut-list/wp-content/uploads/2026/10/Office%20Order%20122.pdf")         == file_identity("https://svsu.ac.in/wp-content/uploads/2026/10/Office%20Order%20122.pdf")
+    store = Store(tmp_path / "t.db")
+    ids = {}
+    for key, url in [("a", "https://svsu.ac.in/wp-content/uploads/2026/10/Office%20Order%20122.pdf"),
+                     ("b", "https://svsu.ac.in/index.php/cut-list/wp-content/uploads/2026/10/Office%20Order%20122.pdf"),
+                     ("c", "https://x.org/files/eoi-copy.pdf"), ("d", "https://x.org/files/eoi.pdf"),
+                     ("e", "https://dmrc.example/documents/11455/Addendum-01-CPD-165.pdf"),
+                     ("f", "https://dmrc.example/documents/11480/Addendum-01-RS-POD-01.pdf")]:
+        title = "Addendum-01" if key in "ef" else "Extension of last date"
+        f = Found(key=key, site_code="TST", url=url, title=title, link_text=title, context="", source_page="",
+                  via={"page"}, linked=True, is_document=True)
+        ids[key], _ = store.upsert(f, classify(KW, title), 1, False, datetime.now().isoformat(), {"Corrigendum"})
+    store.update_item(ids["c"], sha256="same")
+    store.update_item(ids["d"], sha256="same")
+    store.commit()
+    assert mark_duplicates(store) == 2
+    dup = {k: store.item(i)["duplicate_of"] for k, i in ids.items()}
+    assert dup == {"a": None, "b": ids["a"], "c": None, "d": ids["c"], "e": None, "f": None}
+    assert store.item(ids["b"])["ai_status"] == "skipped"
+    assert mark_duplicates(store) == 0
+
+
+def test_a_hung_website_cannot_hold_the_scan():
+    import threading
+    from tender_tracker.scanning import run_with_deadline
+    never = threading.Event()
+
+    def start(code, site):
+        if code == "HUNG":
+            never.wait(30)  # e.g. a browser call that never returns
+        if code == "BAD":
+            raise RuntimeError("broken page")
+        return f"scan of {code}"
+
+    sites = {"OK1": None, "HUNG": None, "BAD": None, "OK2": None}
+    got = {code: (scan, type(exc).__name__ if exc else None)
+           for code, scan, exc in run_with_deadline(sites, start, workers=2, deadline=1.5)}
+    never.set()
+    assert got == {"OK1": ("scan of OK1", None), "OK2": ("scan of OK2", None),
+                   "BAD": (None, "RuntimeError"), "HUNG": (None, "TimeoutError")}

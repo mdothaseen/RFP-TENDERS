@@ -507,7 +507,7 @@ def plan_documents(store, settings: Settings, keywords: Keywords, today: date, d
         recent = (published and published >= window.isoformat()) or (not published and row["linked_seen"])
         if not recent:
             continue
-        if (row["ai_error"] or "").startswith(STALE):  # closed / too old: kept as a link, not downloaded
+        if (row["ai_error"] or "").startswith(STALE) or row["duplicate_of"]:  # closed / old / a second copy
             continue
         category = row["content_category"] or row["category"]
         if row["is_document"]:

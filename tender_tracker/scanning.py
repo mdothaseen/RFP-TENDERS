@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import queue
+import threading
+import time
 from dataclasses import replace
 from datetime import date, datetime
 from urllib.parse import urlsplit
 
 from . import events
 from .changes import meaningful_diff
+from .duplicates import mark_duplicates
 from .classify import Classification, classify, relevance
 from .discover.crawler import Found, SiteScan, scan_site
 from .excel_report import build_records
@@ -69,6 +72,42 @@ def _light_seeds(store: Store, selected: dict) -> dict:
     return watched
 
 
+def run_with_deadline(selected: dict, start, workers: int, deadline: float):
+    """Run start(code, site) for every site, `workers` at a time, and yield (code, scan, error) as each ends.
+
+    A site still running after `deadline` seconds is given up (TimeoutError) so one hung website cannot hold
+    the whole scan, its email and the next scans; its thread is a daemon and is left behind.
+    """
+    results: queue.Queue = queue.Queue()
+    pending = list(selected.items())
+    running: dict[str, float] = {}
+
+    def work(code, site):
+        try:
+            results.put((code, start(code, site), None))
+        except Exception as exc:  # noqa: BLE001 - one site must never stop the others
+            results.put((code, None, exc))
+
+    while pending or running:
+        while pending and len(running) < workers:
+            code, site = pending.pop(0)
+            running[code] = time.monotonic()
+            threading.Thread(target=work, args=(code, site), name=f"scan-{code}", daemon=True).start()
+        try:
+            code, scan, exc = results.get(timeout=min(5.0, deadline))
+        except queue.Empty:
+            now = time.monotonic()
+            for code, began in list(running.items()):
+                if now - began > deadline:
+                    del running[code]
+                    yield code, None, TimeoutError(f"scan did not finish within {deadline / 60:.0f} min "
+                                                   "(the website hung); left for the next scan")
+            continue
+        if running.pop(code, None) is None:
+            continue  # a late answer from a site that was already given up
+        yield code, scan, exc
+
+
 def scan_sites(store: Store, settings, keywords, selected: dict, run_id: int, baseline: bool, deep: bool,
                today: date, args, notify_enabled: bool = False) -> tuple[int, list[SiteScan]]:
     light = bool(args.light)
@@ -81,38 +120,39 @@ def scan_sites(store: Store, settings, keywords, selected: dict, run_id: int, ba
     ai_categories = set(settings.ai.get("categories") or [])
     now = datetime.now().isoformat(timespec="seconds")
     scans, new_total = [], 0
-    with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
-        futures = {
-            pool.submit(scan_site, site, settings, keywords, known[code], deep, today, args.max_pages, light=light): code
-            for code, site in selected.items()
-        }
-        for fut in as_completed(futures):
-            code = futures[fut]
-            try:
-                scan = fut.result()
-            except Exception as exc:  # noqa: BLE001
-                log.exception("[%s] scan failed", code)
-                scan = SiteScan(selected[code], status="failed", errors=[str(exc)[:200]], error_count=1,
-                                finished=datetime.now())
-            site_baseline = baseline or code not in scanned_before
-            if site_baseline and not baseline:
-                log.info("[%s] first scan of this site: saved as its baseline", code)
-            store.commit()
-            store.db.execute("BEGIN IMMEDIATE")
-            new_items = save_scan(store, scan, keywords, run_id, site_baseline, now, ai_categories, today)
-            store.record_site_run(run_id, scan, new_items)
-            store.commit()
-            new_total += new_items
-            scans.append(scan)
-            log.info("[%s] saved: %d items, %d new (%d/%d sites done)", code, len(scan.items), new_items,
-                     len(scans), len(selected))
-            if notify_enabled:
-                records = build_records(store, keywords, settings, selected, store.run(run_id), today,
-                                        "site_code=? AND notified=0", (code,))
-                events.queue_discoveries(store, records, settings)
-                events.queue_changes(store, settings)
-                if not args.defer_enrichment:
-                    events.drain_outbox(store, limit=2, time_budget_seconds=5)
+    deadline = (float(settings.crawl.get("site_max_minutes", 20)) + 10) * 60
+
+    def start(code, site):
+        return scan_site(site, settings, keywords, known[code], deep, today, args.max_pages, light=light)
+
+    for code, scan, exc in run_with_deadline(selected, start, max(1, workers), deadline):
+        if exc is not None:
+            if isinstance(exc, TimeoutError):
+                log.error("[%s] %s", code, exc)
+            else:
+                log.error("[%s] scan failed: %s", code, exc, exc_info=exc)
+            scan = SiteScan(selected[code], status="failed", errors=[str(exc)[:200]], error_count=1,
+                            finished=datetime.now())
+        site_baseline = baseline or code not in scanned_before
+        if site_baseline and not baseline:
+            log.info("[%s] first scan of this site: saved as its baseline", code)
+        store.commit()
+        store.db.execute("BEGIN IMMEDIATE")
+        new_items = save_scan(store, scan, keywords, run_id, site_baseline, now, ai_categories, today)
+        store.record_site_run(run_id, scan, new_items)
+        store.commit()
+        new_total += new_items
+        scans.append(scan)
+        log.info("[%s] saved: %d items, %d new (%d/%d sites done)", code, len(scan.items), new_items,
+                 len(scans), len(selected))
+        if notify_enabled:
+            records = build_records(store, keywords, settings, selected, store.run(run_id), today,
+                                    "site_code=? AND notified=0", (code,))
+            events.queue_discoveries(store, records, settings)
+            events.queue_changes(store, settings)
+            if not args.defer_enrichment:
+                events.drain_outbox(store, limit=2, time_budget_seconds=5)
     # Absence in a budget-limited crawl is not evidence that a document was removed.
     store.commit()
+    mark_duplicates(store)
     return new_total, scans

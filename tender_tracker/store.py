@@ -153,6 +153,7 @@ class Store:
             "missing_checks": "INTEGER NOT NULL DEFAULT 0", "user_status": "TEXT NOT NULL DEFAULT 'new'",
             "related_item_id": "INTEGER",
             "deadline_override": "TEXT",
+            "duplicate_of": "INTEGER",  # a later copy of the same file (see duplicates.py)
         }.items():
             if column not in have:
                 self.db.execute(f"ALTER TABLE items ADD COLUMN {column} {kind}")

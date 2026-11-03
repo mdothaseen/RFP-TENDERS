@@ -8,6 +8,7 @@ from datetime import date
 
 from . import ai_extract, documents, events, locking
 from .config import DATA_DIR
+from .duplicates import mark_duplicates
 from .store import Store
 
 log = logging.getLogger("tender_tracker")
@@ -110,6 +111,7 @@ def _work(store, settings, keywords, sites, args, today, run_id):
         if recovered:
             log.info("Missing saved assets: %d documents queued for recovery", recovered)
         process_documents(store, settings, keywords, sites, today, workers, deep=bool(store.run(run_id)["deep"]))
+        mark_duplicates(store)  # downloads give each file its sha256: same bytes under two addresses
         documents.fill_upload_dates(store, sites, settings, keywords, today, workers=workers)
     summary = None
     if not args.no_ai:

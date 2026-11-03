@@ -161,6 +161,13 @@ relevance_high:
   - '\btpa\b'
   - 'third.party agenc'
   - 'certification (body|bodies|agenc)'
+  # Training work is High too (training partners / providers, skill training programmes, ToT / ToA).
+  - 'training (partner|provider|agenc|institut|organi[sz]ation|delivery|programme|program|project|centre|center)'
+  - 'training of (candidates|beneficiaries|youth|trainees|trainers|women|students|workers)'
+  - 'skill(ing)? (development|training|upgradation)'
+  - 'skilling (programme|program|project|initiative)'
+  - '\btot\b|\btoa\b|training of trainers|training of assessors'
+  - '\bddu-?gky\b|\bpmkk\b|\bnaps\b|apprenticeship'
 # Work close to assessment that the company could bid for (see company_profile in settings.yaml).
 relevance_medium:
   - 'skill gap'
@@ -201,7 +208,6 @@ relevance_low:
   - 'auction|disposal|\bscrap\b'
   - 'insurance|travel agenc|\bhotel\b'
   - 'event management'
-  - 'training (partner|provider|delivery|centre|center)s?'
   - 'mobili[sz]ation|placement agenc'
   - 'chartered accountant|\bca firm|internal audit|statutory audit'
 

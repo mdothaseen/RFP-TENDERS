@@ -6,15 +6,17 @@ company_profile: >
   CeeVision, an ASSESSMENT AGENCY in India. It assesses and certifies candidates for Sector Skill
   Councils, NSDC, NCVET-recognised awarding bodies, state skill missions, universities and boards
   (PMKVY, RPL, PM Vishwakarma, short-term training, apprenticeship, ToT/ToA, CBT / online, practical
-  and viva assessments). It does NOT run training centres and is NOT a training partner.
-  High relevance: empanelment / onboarding / selection of assessment agencies or assessment bodies,
-  third-party assessment and certification work, conducting CBT / online / practical examinations,
-  assessor and proctor deployment, RPL assessment, assessment requirements or calls of SSCs and
-  awarding bodies. Medium relevance: work close to assessment that CeeVision could bid for (exam
+  and viva assessments), and also takes up skill training work.
+  High relevance: (1) assessment work - empanelment / onboarding / selection of assessment agencies or
+  assessment bodies, third-party assessment and certification, conducting CBT / online / practical
+  examinations, assessor and proctor deployment, RPL assessment, assessment calls of SSCs and awarding
+  bodies; (2) training work - empanelment / selection of training partners or training providers,
+  skill development / skilling training programmes and projects, training of candidates or
+  beneficiaries, ToT / ToA, DDU-GKY, apprenticeship. Medium relevance: work close to assessment that CeeVision could bid for (exam
   management, question bank / content creation, evaluation, monitoring / third-party verification of
-  training, skill gap studies, survey and impact assessment). Low relevance: training delivery,
-  running training centres, mobilisation, placement, office procurement, IT/hardware, printing,
-  events, construction, audits and staff recruitment.
+  training, skill gap studies, survey and impact assessment). Low relevance: mobilisation and
+  placement-only work, office procurement, IT/hardware, printing, events, construction, repair,
+  maintenance, audits and staff recruitment.
 
 crawl:
   workers: 6                 # sites checked in parallel

@@ -11,6 +11,7 @@ from collections import Counter
 
 from .classify import classify
 from .discover.crawler import _tidy_title
+from .duplicates import mark_duplicates
 from .scanning import page_change_class
 
 log = logging.getLogger("tender_tracker")
@@ -48,5 +49,6 @@ def reclassify(store, keywords, settings) -> Counter:
         if fields:
             store.update_item(row["id"], **fields)
     store.commit()
+    changes["duplicate copies re-pointed"] += mark_duplicates(store)
     log.info("Reclassified %d items: %s", len(rows), dict(changes.most_common(12)))
     return changes

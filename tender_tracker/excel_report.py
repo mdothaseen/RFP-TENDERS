@@ -116,6 +116,8 @@ def build_records(store, keywords: Keywords, settings: Settings, sites: dict[str
         elif child["ai_status"] != "done":
             extensions[child["related_item_id"]] = (None, child["id"])
     for row in store.items(where, params):
+        if row["duplicate_of"]:
+            continue  # the same file is already listed under its first address
         ai = ai_fields(row)
         category = row["content_category"] or row["category"] or "Other"
         ai_type = AI_TYPE_MAP.get(ai.get("doc_type", ""), ai.get("doc_type", ""))
