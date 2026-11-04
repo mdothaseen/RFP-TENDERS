@@ -18,7 +18,6 @@ ACCENT = "#4F46E5"
 INK = "#0F172A"
 BORDER = "#E2E8F0"
 MUTED = "#64748B"
-PAGE = "#F1F5F9"
 RED, AMBER, GREEN_INK = "#B42318", "#B54708", "#067647"
 REL_STYLE = {"High": ("#FDE2E1", RED), "Medium": ("#FEF0C7", AMBER), "Low": ("#EEF2F6", "#475467")}
 TIER_STYLE = {"Focused": (RED, "#FEF3F2"), "Regular": (AMBER, "#FFFAEB"), "Low": ("#475467", "#F8FAFC")}
@@ -287,7 +286,7 @@ def build_email(report: dict, run, problems: list[str], ai_summary: dict | None,
             subject = "[Action needed] " + subject
 
     color, bg, label, message = verdict
-    o = [f"<tr><td style='height:4px;background:{ACCENT};font-size:0;line-height:0'>&nbsp;</td></tr><tr><td style='padding:22px 24px 26px'>",
+    o = [f"<tr><td style='height:4px;background:{ACCENT};font-size:0;line-height:0'>&nbsp;</td></tr><tr><td style='padding:16px 8px 20px'>",
          f"<div style='font-size:11px;font-weight:800;letter-spacing:1.2px;color:{ACCENT}'>TENDER TRACKER</div>",
          f"<div style='font-size:24px;font-weight:800;color:{INK};margin-top:4px'>SSC Tender &amp; Notice Update · {esc(day)}</div>",
          f"<div style='color:{MUTED};font-size:13px;margin:4px 0 12px'>All {len(sites) or sites_checked} websites checked · "
@@ -361,10 +360,9 @@ def build_email(report: dict, run, problems: list[str], ai_summary: dict | None,
              "Relevance is judged by AI against your company profile. Always check the original document before applying."
              "</div></td></tr>")
 
+    # Full width of the mail window: no centred max-width column and no grey margin around it.
     body = (f"<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'></head>"
-            f"<body style='margin:0;padding:0;background:{PAGE}'><table width='100%' cellpadding='0' cellspacing='0' "
-            f"style='background:{PAGE};padding:12px 0'><tr><td align='center'><table width='100%' cellpadding='0' "
-            f"cellspacing='0' style='max-width:1100px;width:100%;background:#FFFFFF;font-family:Segoe UI,Roboto,Arial,"
-            f"sans-serif;font-size:13px;color:{INK};border:1px solid {BORDER};border-radius:16px;overflow:hidden'>{''.join(o)}</table></td></tr>"
-            "</table></body></html>")
+            f"<body style='margin:0;padding:0;background:#FFFFFF'><table width='100%' cellpadding='0' cellspacing='0' "
+            f"style='width:100%;background:#FFFFFF;font-family:Segoe UI,Roboto,Arial,sans-serif;font-size:13px;color:{INK}'>"
+            f"{''.join(o)}</table></body></html>")
     return subject, body
