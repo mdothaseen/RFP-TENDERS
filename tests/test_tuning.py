@@ -165,3 +165,31 @@ def test_a_hung_website_cannot_hold_the_scan():
     never.set()
     assert got == {"OK1": ("scan of OK1", None), "OK2": ("scan of OK2", None),
                    "BAD": (None, "RuntimeError"), "HUNG": (None, "TimeoutError")}
+
+
+@pytest.mark.parametrize("title, category", [
+    ("NIT- OAW-2333", "Tender"), ("E-Tender Notice (NIT)", "Tender"), ("NIT No. 12/2026 for printing", "Tender"),
+    ("Control of Multi-Input Converter (NIT Durgapur report)", "Other"),
+])
+def test_nit_means_a_tender_notice_not_an_institute(title, category):
+    assert classify(KW, title).category == category
+
+
+def test_undated_old_links_are_not_new():
+    from datetime import date
+    from tender_tracker.excel_report import _looks_old_undated
+    today = date(2026, 11, 4)
+    entry = {"CA": {"coa.gov.in"}}
+    row = lambda title, url, run, page: {"title": title, "url": url, "first_run_id": run, "site_code": "CA",
+                                         "source_page": page}
+    assert _looks_old_undated(row("Tender Documents NATA 2022", "https://coa.gov.in/f?id=1", 55, "https://coa.gov.in/"),
+                              today, set(), entry)
+    assert _looks_old_undated(row("[ PDF, 525.22 KB]", "https://niwe.res.in/static/pdf/RFP_2025.pdf", 55, ""), today,
+                              set(), entry)
+    # A deep scan's inner page (archive) vs. the homepage
+    assert _looks_old_undated(row("Revised Tender Document", "https://coa.gov.in/f?id=2", 54,
+                                  "https://coa.gov.in/sitemap.php?lang=1"), today, {54}, entry)
+    assert not _looks_old_undated(row("Revised Tender Document", "https://coa.gov.in/f?id=2", 54,
+                                      "https://www.coa.gov.in/"), today, {54}, entry)
+    assert not _looks_old_undated(row("EOI for assessment agencies 2026-27", "https://coa.gov.in/f?id=3", 55,
+                                      "https://coa.gov.in/notices"), today, {54}, entry)

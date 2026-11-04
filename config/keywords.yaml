@@ -33,7 +33,7 @@ categories:
     - '\btenders?\b'
     - 'e-?tender'
     - 'notice inviting tender'
-    - '\bnit\b'
+    - '\(nit\)|\bnit\b\s*(no\b|no\.|number|[-:#/]|\d)'  # "NIT- OAW-2333", "NIT No. 5"; not "NIT Durgapur"
     - 'bid document'
     - 'invitation (for|to) bid'
     - '\bbids? (are|is) invited'

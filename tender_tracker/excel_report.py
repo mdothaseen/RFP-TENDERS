@@ -14,6 +14,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -96,6 +97,28 @@ def _via_text(found_via: str | None) -> str:
 
 
 # ---------------------------------------------------------------------------------------------- records
+_YEAR = re.compile(r"(?<!\d)(20\d\d)(?!\d)")
+
+
+def _page_key(url: str | None) -> str:
+    return re.sub(r"^https?://(www\.)?", "", (url or "").lower()).rstrip("/")
+
+
+def _looks_old_undated(row, today: date, deep_runs: set[int], entry_pages: dict[str, set[str]]) -> bool:
+    """An item without any date, found on a site scanned before, that is still not news.
+
+    - Its title or file address names only past years ("Tender Documents NATA 2022", "RFP_2025.pdf").
+    - A deep scan found it on an inner page (archives, department pages, reports) rather than on the
+      homepage or a listed tender page: deep scans reach years of old links.
+    """
+    years = [int(y) for y in _YEAR.findall(f"{row['title'] or ''} {row['url'] or ''}")]
+    if years and max(years) < today.year:
+        return True
+    if row["first_run_id"] in deep_runs:
+        return _page_key(row["source_page"]) not in entry_pages.get(row["site_code"], set())
+    return False
+
+
 def build_records(store, keywords: Keywords, settings: Settings, sites: dict[str, Site], run, today: date,
                   where: str = "1=1", params: tuple = ()) -> list[dict]:
     """One dict per item that belongs in Excel (not 'Other', not older than the Excel window)."""
@@ -105,6 +128,8 @@ def build_records(store, keywords: Keywords, settings: Settings, sites: dict[str
     oldest = (today - timedelta(days=max_age)).isoformat()
     run_id = run["id"]
     records = []
+    deep_runs = {r[0] for r in store.db.execute("SELECT id FROM runs WHERE deep=1")}
+    entry_pages = {code: {_page_key(u) for u in [site.url, *site.seeds]} for code, site in sites.items()}
     extensions = {}
     for child in sorted(store.items("related_item_id IS NOT NULL AND removed=0"), key=lambda r: (r["first_seen"], r["id"])):
         answer = ai_fields(child)
@@ -142,6 +167,8 @@ def build_records(store, keywords: Keywords, settings: Settings, sites: dict[str
         old_find = bool(published and published < today - timedelta(days=60))
         if row["baseline"]:
             fresh = bool(published and published >= today - timedelta(days=30))
+        elif not published and not row["uploaded_date"]:
+            fresh = not _looks_old_undated(row, today, deep_runs, entry_pages)
         else:
             fresh = not old_find
         notes = []

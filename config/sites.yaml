@@ -731,8 +731,9 @@ sites:
 
   - code: FIPL
     name: "Flipkart Internet Private Limited"
-    url: https://www.flipkart.com/
+    url: https://corporate.flipkart.net/
     seeds: []
+    notes: "flipkart.com is the shop (product pages, no notices); the corporate site carries company news"
 
   - code: DBAOUG
     name: "Dr.Babasaheb Ambedkar Open University, Gujarat"
