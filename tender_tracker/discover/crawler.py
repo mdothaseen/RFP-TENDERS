@@ -403,6 +403,8 @@ class SiteScanner:
         existing = self.scan.items.get(key)
         if existing is not None:
             existing.via.add(via)
+            if is_doc and not existing.is_document:  # a "page" link that turned out to serve a file
+                existing.is_document = True
             if linked and not existing.linked:
                 existing.linked = True
                 existing.source_page = source_page
