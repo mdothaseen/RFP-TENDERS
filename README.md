@@ -155,6 +155,8 @@ Hataana ho to `config/sites.yaml` mein us site ka block delete kar dein.
 
 Advanced: `config/sites.yaml` mein `seeds` (tender page ka link) jodne se wo page har baar sabse pehle padha jaata hai.
 
+Har site ki `tier` (`Focused`, `Regular` ya `Low`) batati hai ki summary email mein wo kis section mein aayegi. Sabhi sites roz scan hoti hain; email mein teeno category ka status dikhta hai: har organisation ki row (website padhi gayi ya nahi, aur nahi to kyun), naye tender/updates ki poori detail (Focused ke 15 items per org, Regular ke 8, Low ke 5), aur jin sites mein kuch naya nahi aaya unki list. Nayi site ki `tier` na likhein to wo `Regular` maani jaati hai.
+
 Keywords (kaunsa link tender hai, kaunsa notice) `config/keywords.yaml` mein hain.
 
 ## Roz kaise chalta hai (har ghante popup)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from datetime import date
 
@@ -27,6 +28,43 @@ def problems_from_history(store: Store, sites: dict) -> list[str]:
     return problems
 
 
+def failure_reason(status: str, errors: list[str]) -> str:
+    """Plain words for why a website could not be read (shown next to it in the email)."""
+    text = " ".join(errors)
+    if "did not finish" in text:
+        return "website hung (timeout)"
+    if "403" in text or "challenge" in text:
+        return "website blocks automatic reading (403)"
+    if "NameResolution" in text or "getaddrinfo" in text:
+        return "website address not found (DNS)"
+    if "Timeout" in text or "timed out" in text:
+        return "website too slow (timeout)"
+    if "SSL" in text or "CERTIFICATE" in text:
+        return "website certificate error"
+    if status == "partial":
+        return "some pages could not be read"
+    return "website could not be opened"
+
+
+def site_status(store: Store, sites: dict) -> list[dict]:
+    """Latest check of every website, for the email's per-category status tables."""
+    out = []
+    for code, site in sites.items():
+        hist = store.site_history(code, 1)
+        status = hist[0]["status"] if hist else "not checked"
+        try:
+            errors = json.loads(hist[0]["errors"] or "[]") if hist else []
+        except ValueError:
+            errors = []
+        if status in ("partial", "failed"):
+            reason = failure_reason(status, errors)
+        else:
+            reason = "" if hist else "not checked yet"
+        out.append({"code": code, "name": site.name, "url": site.url, "tier": site.tier,
+                    "status": status, "reason": reason})
+    return out
+
+
 def send_digest(store: Store, settings, keywords, sites: dict, run_row, today: date, report: dict) -> None:
     events.queue_daily_digest(store, report, run_row, settings, keywords, sites, today,
                               problems_from_history(store, sites))
@@ -37,6 +75,7 @@ def send_digest(store: Store, settings, keywords, sites: dict, run_row, today: d
 def publish(store, settings, keywords, sites, run_row, today, report=None, deliver=True) -> None:
     from .health import queue_health
     report = report or summary_report(store, keywords, settings, sites, run_row, today)
+    report["site_status"] = site_status(store, sites)
     events.queue_discoveries(store, report["records"], settings)
     events.queue_changes(store, settings)
     events.queue_reminders(store, report["records"], today, settings)
@@ -55,6 +94,7 @@ def pending_email(store: Store, settings, keywords, sites: dict, today: date) ->
         return 0
     run_row = store.run(int(run_id))
     report = write_reports(store, keywords, settings, sites, run_row, today)
+    report["site_status"] = site_status(store, sites)
     send_digest(store, settings, keywords, sites, run_row, today, report)
     return 0
 
@@ -69,6 +109,7 @@ def test_notify(settings, keywords, sites: dict) -> int:
             return 1
         today = date.today()
         report = summary_report(store, keywords, settings, sites, run_row, today)
+        report["site_status"] = site_status(store, sites)
         digest = build_digest(report, run_row, problems_from_history(store, sites), None, today,
                               int(settings.excel.get("closing_soon_days", 7)), len(sites))
         digest.subject = "[TEST] " + digest.subject

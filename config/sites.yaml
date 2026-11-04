@@ -9,12 +9,14 @@
 # ssl_verify   false = site has a broken HTTPS certificate
 # extra_hosts  other hostnames whose documents belong to this site
 # exclude      URL substrings the crawler should skip
+# tier         Focused / Regular / Low: order and amount of detail in the summary email (all sites are scanned)
 #
 # To add a new organisation, copy one block and change the values.
 
 sites:
   - code: BWSSC
     name: Beauty & Wellness Sector Skill Council (B&WSSC)
+    tier: Focused
     url: https://www.bwssc.in/
     seeds:
       - https://www.bwssc.in/notices-and-updates
@@ -23,6 +25,7 @@ sites:
 
   - code: ESSCI
     name: Electronics Sector Skill Council of India (ESSCI)
+    tier: Focused
     url: https://www.essc-india.org/
     seeds:
       - https://www.essc-india.org/rfp.php
@@ -30,12 +33,14 @@ sites:
 
   - code: SCGJ
     name: Skill Council for Green Jobs (SCGJ)
+    tier: Focused
     url: https://sscgj.in/
     seeds:
       - https://sscgj.in/newsletter/
 
   - code: HCSSC
     name: Handicrafts and Carpet Sector Skill Council (HCSSC)
+    tier: Focused
     url: https://hcssc.in/
     seeds:
       - https://hcssc.in/notifications
@@ -43,6 +48,7 @@ sites:
 
   - code: ASDC
     name: Automotive Skills Development Council (ASDC)
+    tier: Focused
     url: https://www.asdc.org.in/
     seeds:
       - https://www.asdc.org.in/notice-update
@@ -52,6 +58,7 @@ sites:
 
   - code: FICSI
     name: Food Industry Capacity and Skill Initiative (FICSI)
+    tier: Focused
     url: https://www.ficsi.in/
     seeds:
       - https://www.ficsi.in/news-and-events
@@ -59,6 +66,7 @@ sites:
 
   - code: RCPSDC
     name: Rubber, Chemical & Petrochemical Skill Development Council (RCPSDC)
+    tier: Focused
     url: https://rcpsdc.in/
     js: true
     seeds:
@@ -68,6 +76,7 @@ sites:
 
   - code: SPEFL-SC
     name: Sports, Physical Education, Fitness and Leisure Skills Council (SPEFL-SC)
+    tier: Focused
     url: https://www.sportsskills.in/
     seeds:
       - https://www.sportsskills.in/tender_notice.php
@@ -76,6 +85,7 @@ sites:
 
   - code: MEPSC
     name: Management and Entrepreneurship and Professional Skills Council (MEPSC)
+    tier: Focused
     url: https://www.mepsc.in/
     seeds:
       - https://www.mepsc.in/notice/
@@ -83,6 +93,7 @@ sites:
 
   - code: AMHSSC
     name: Apparel Made-Ups & Home Furnishing Sector Skill Council
+    tier: Focused
     url: https://www.sscamh.com/
     seeds:
       - https://www.sscamh.com/en/tenders-enquiries
@@ -92,6 +103,7 @@ sites:
 
   - code: CGSC
     name: Capital Goods & Strategic Skill Council
+    tier: Focused
     url: https://cgssc.org/
     seeds:
       - https://cgssc.org/latest-news/
@@ -99,6 +111,7 @@ sites:
 
   - code: MESC
     name: Media and Entertainment Skills Council (MESC)
+    tier: Focused
     url: https://mescindia.org/
     seeds:
       - https://mescindia.org/downloads/
@@ -107,6 +120,7 @@ sites:
 
   - code: PSSC
     name: Power Sector Skill Council
+    tier: Focused
     url: https://www.psscindia.org/
     seeds:
       - https://www.psscindia.org/NewsEvents.aspx
@@ -114,6 +128,7 @@ sites:
 
   - code: TSC
     name: Textile Sector Skill Council (TSC)
+    tier: Focused
     url: https://texskill.in/
     seeds:
       - https://texskill.in/rfp.php
@@ -122,6 +137,7 @@ sites:
 
   - code: ASCI
     name: Agriculture Sector Skill Council (ASCI)
+    tier: Focused
     url: https://asci-india.com/
     seeds:
       - https://asci-india.com/other-notices-RFPS.php
@@ -130,6 +146,7 @@ sites:
 
   - code: HSSC-HC
     name: Hydrocarbon Sector Skill Council (HSSC)
+    tier: Focused
     url: https://www.hsscindia.in/
     js: true
     seeds:
@@ -139,6 +156,7 @@ sites:
 
   - code: HSSC-HLT
     name: Healthcare Sector Skill Council
+    tier: Focused
     url: https://www.healthcare-ssc.in/
     seeds:
       - https://www.healthcare-ssc.in/update.aspx
@@ -146,6 +164,7 @@ sites:
 
   - code: CSDCI
     name: Construction Skill Development Council of India
+    tier: Focused
     url: https://www.csdcindia.org/
     seeds:
       - https://www.csdcindia.org/tenders/
@@ -153,12 +172,14 @@ sites:
 
   - code: IASC
     name: Instrumentation Automation Surveillance & Communication Sector Skill Council (IASC)
+    tier: Focused
     url: https://iascsectorskillcouncil.in/
     seeds:
       - https://iascsectorskillcouncil.in/career/
 
   - code: TSSC
     name: Telecom Sector Skill Council
+    tier: Focused
     url: https://www.tsscindia.com/
     seeds:
       - https://www.tsscindia.com/Events.aspx
@@ -167,12 +188,14 @@ sites:
 
   - code: THSC
     name: Tourism and Hospitality Skill Council (THSC)
+    tier: Focused
     url: https://thsc.in/
     seeds:
       - https://thsc.in/notifications/
 
   - code: WMPSC
     name: Water Management & Plumbing Skill Council (Indian Plumbing Skills Council)
+    tier: Focused
     url: https://wmpsc.in/
     js: true
     seeds:
@@ -182,6 +205,7 @@ sites:
 
   - code: FFSC
     name: Furniture and Fittings Skill Council (FFSC)
+    tier: Focused
     url: https://ffsc.in/index2.php
     seeds:
       - https://ffsc.in/rfp_tender.php
@@ -191,6 +215,7 @@ sites:
 
   - code: HMCG
     name: Home Management and Caregivers Sector Skill Council (HMCG SSC)
+    tier: Focused
     url: https://dwsscindia.com/
     seeds:
       - https://dwsscindia.com/6415-2/
@@ -199,6 +224,7 @@ sites:
 
   - code: NASSCOM
     name: National Association of Software and Service Companies (NASSCOM) - SSC
+    tier: Focused
     url: https://www.sscnasscom.com/
     js: true
     seeds:
@@ -207,6 +233,7 @@ sites:
 
   - code: LSC
     name: Logistics Sector Skill Council (LSC)
+    tier: Focused
     url: https://lsc-india.com/
     seeds:
       - https://lsc-india.com/news_letter
@@ -214,6 +241,7 @@ sites:
 
   - code: AASSC
     name: Aerospace and Aviation Sector Skill Council (AASSC)
+    tier: Focused
     url: https://www.aassc.in/
     js: true
     seeds:
@@ -223,6 +251,7 @@ sites:
 
   - code: GJSCI
     name: Gems and Jewellery Sector Skill Council (GJSCI)
+    tier: Focused
     url: https://www.gjsci.org/
     seeds:
       - https://www.gjsci.org/news.html
@@ -230,6 +259,7 @@ sites:
 
   - code: SCPWD
     name: Skill Council for Person with Disability (SCPwD)
+    tier: Focused
     url: https://scpwd.in/
     seeds:
       - https://scpwd.in/tenders-eoi-rfp
@@ -238,18 +268,21 @@ sites:
 
   - code: IESC
     name: Infrastructure Equipment Sector Skill Council (IESC)
+    tier: Focused
     url: https://iescindia.com/
     seeds:
       - https://iescindia.com/newsletters-articles/
 
   - code: IISSSC
     name: Indian Iron and Steel Sector Skill Council
+    tier: Focused
     url: https://www.iisssc.org/
     seeds:
       - https://www.iisssc.org/newsletter/
 
   - code: SCMS
     name: Skill Council For Mining Sector (SCMS)
+    tier: Focused
     url: https://www.skillcms.in/
     seeds:
       - https://www.skillcms.in/notices-page-10111
@@ -257,6 +290,7 @@ sites:
 
   - code: BFSI
     name: Banking, Financial Services and Insurance Sector Skill Council (BFSI SSC)
+    tier: Focused
     url: https://bfsissc.com/
     js: true
     seeds:
@@ -266,6 +300,7 @@ sites:
 
   - code: LSSSDC
     name: Life Sciences Sector Skill Development Council (LSSSDC)
+    tier: Focused
     url: https://www.lsssdc.in/
     seeds:
       - https://www.lsssdc.in/page/Tenders-RFP
@@ -274,12 +309,14 @@ sites:
 
   - code: LSSC
     name: Leather Sector Skill Council (LSSC)
+    tier: Focused
     url: https://www.leatherssc.org/
     seeds:
       - https://www.leatherssc.org/media/library/news-letter
 
   - code: RASCI
     name: Retail Associated Skill Council of India (RASCI)
+    tier: Focused
     url: https://www.rasci.in/
     ssl_verify: false
     seeds:
@@ -288,6 +325,7 @@ sites:
 
   - code: NSDC
     name: National Skill Development Corporation
+    tier: Focused
     url: https://www.nsdcindia.org/
     extra_hosts: [api1.nsdcindia.org]
     seeds:
@@ -298,6 +336,7 @@ sites:
 
   - code: NCVET
     name: National Council for Vocational Education and Training (NCVET)
+    tier: Focused
     url: https://ncvet.gov.in/?lang=en
     exclude: ["/hi/"]
     seeds:
@@ -311,6 +350,7 @@ sites:
   # Development Commissioner office (dcmsme.gov.in, plain HTML) are read instead.
   - code: MM
     name: "Office of the Development Commissioner, Ministry of MSME (DC-MSME)"
+    tier: Regular
     url: https://dcmsme.gov.in/
     # Staff-only pages (office / transfer / budget orders, seniority lists): over 1000 files, never tenders.
     exclude: ["/employ-corner/", "Office_Order", "Budget_Allocation", "Transfer_order", "MISC_Order",
@@ -323,11 +363,13 @@ sites:
 
   - code: MB
     name: "Maharashtra State Board of Skill, Vocational Education and Training (MSBSVET)"
+    tier: Focused
     url: https://msbsvet.edu.in/Public/Home.aspx
     seeds: []
 
   - code: NIELIT
     name: "National Institute of Electronics & Information Technology (NIELIT)"
+    tier: Regular
     url: https://www.nielit.gov.in/
     js: true
     seeds: []
@@ -335,84 +377,100 @@ sites:
   # ---- NCVET awarding bodies (https://ncvet.gov.in/awarding-bodies-3/), added 2026-10-22 ----
   - code: MSU
     name: "Medhavi Skill University"
+    tier: Regular
     url: https://msu.edu.in/
     seeds:
       - https://www.msu.edu.in/tenders
 
   - code: CUTM
     name: "Centurion University of Technology and Management"
+    tier: Regular
     url: https://cutm.ac.in/
     seeds:
       - https://cutm.ac.in/tenders
 
   - code: DTNBWEDM
     name: "Dattopant Thengadi National Board for Workers Education and Development, Ministry of Labor and Employment"
+    tier: Focused
     url: https://cbwe.gov.in/
     seeds: []
 
   - code: JSPL
     name: "Jindal Steel & Power Limited"
+    tier: Regular
     url: https://www.jindalsteel.com/
     seeds: []
 
   - code: ASEF
     name: "Adani Skills and Education Foundation"
+    tier: Regular
     url: https://www.adanifoundation.org/
     seeds: []
 
   - code: LLF
     name: "Labournet Livelihood Foundation"
+    tier: Low
     url: https://labournet.in/
     seeds: []
 
   - code: DRF
     name: "Dr Reddys Foundation"
+    tier: Low
     url: https://www.drreddysfoundation.org/
     seeds: []
 
   - code: GDGU
     name: "G D Goenka University"
+    tier: Regular
     url: https://www.gdgoenkauniversity.com/
     seeds: []
 
   - code: SISASS
     name: "Sulabh International School of Action and Sociology of Sanitation"
+    tier: Regular
     url: https://www.sulabhinternational.org/
     seeds: []
 
   - code: APMZL
     name: "Andhra Pradesh Medtech Zone Limited"
+    tier: Regular
     url: https://amtz.in/
     seeds:
       - https://amtz.in/tenders/
 
   - code: HHEF
     name: "Henry Harvin Education Foundation"
+    tier: Regular
     url: https://www.henryharvin.com/
     seeds: []
 
   - code: CIPET
     name: "Central Institute of Petrochemicals Engineering & Technology (CIPET)"
+    tier: Low
     url: https://www.cipet.gov.in/
     seeds: []
 
   - code: NFDC
     name: "National Film Development Corporation (NFDC)"
+    tier: Regular
     url: https://www.nfdcindia.com/
     seeds: []
 
   - code: IAF
     name: "Indian Air Force"
+    tier: Low
     url: https://indianairforce.nic.in/
     seeds: []
 
   - code: NAVY
     name: "Indian Navy (incl. Directorate of Special Operations and Diving)"
+    tier: Low
     url: https://www.indiannavy.gov.in/
     seeds: []
 
   - code: ARMY
     name: "Indian Army (Armoured Corps, Artillery, Signals, Engineers, AMC, EME & other corps)"
+    tier: Low
     url: https://indianarmy.nic.in/
     js: true
     seeds:
@@ -420,6 +478,7 @@ sites:
 
   - code: DGT
     name: "Directorate General of Training (DGT)"
+    tier: Regular
     url: https://dgt.gov.in/
     seeds:
       - https://dgt.gov.in/en/tender-notices
@@ -428,67 +487,79 @@ sites:
 
   - code: NIOS
     name: "National Institute of Open Schooling (NIOS)"
+    tier: Regular
     url: https://www.nios.ac.in/
     seeds:
       - https://www.nios.ac.in/tender-notice.aspx
 
   - code: NAR
     name: "National Academy of RUDSETI"
+    tier: Regular
     url: https://www.rudsetacademy.org/
     seeds:
       - https://www.rudsetacademy.org/Tender_Notification.html
 
   - code: BECIL
     name: "Broadcast Engineering Consultants India Limited (BECIL)"
+    tier: Regular
     url: https://www.becil.com/
     seeds:
       - https://www.becil.com/tenders
 
   - code: IIT
     name: "Indian Institute of Technology (IIT) Guwahati"
+    tier: Low
     url: https://www.iitg.ac.in/
     seeds: []
 
   - code: IACE
     name: "International Automobile Centre of Excellence (iACE)"
+    tier: Low
     url: https://www.iace.co.in/
     seeds: []
 
   - code: CBSE
     name: "Central Board of Secondary Education (CBSE)"
+    tier: Regular
     url: https://www.cbse.gov.in/
     seeds: []
 
   - code: MSRVVP
     name: "Maharshi Sandipani Rashtriya Ved Vidya Pratishthan"
+    tier: Regular
     url: https://msrvvp.ac.in/
     seeds:
       - https://msrvvp.ac.in/veda/pages/tenders.html
 
   - code: ICAI
     name: "The Institute of Cost Accountants of India (ICAI)"
+    tier: Low
     url: https://icmai.in/
     seeds: []
 
   - code: GU
     name: "Ganpat University"
+    tier: Regular
     url: https://www.ganpatuniversity.ac.in/
     seeds:
       - https://www.ganpatuniversity.ac.in/about/tenders-and-notification
 
   - code: GCVT
     name: "Gujarat Council of Vocational Training"
+    tier: Regular
     url: https://gcvt.gujarat.gov.in/
     seeds: []
 
   - code: CSVTU
     name: "Chhattisgarh Swami Vivekanand Technical University"
+    tier: Regular
     url: https://csvtu.ac.in/
     seeds:
       - https://csvtu.ac.in/ew/notifications/?query=tenders
 
   - code: UPSDM
     name: "UP Skill Development Mission (UPSDM)"
+    tier: Focused
     url: https://upsdm.gov.in/
     seeds:
       - https://upsdm.gov.in/RFP/OrganizationRegistration
@@ -496,6 +567,7 @@ sites:
 
   - code: ASAP
     name: "Additional Skill Acquisition Programme (ASAP)"
+    tier: Regular
     url: https://asapkerala.gov.in/
     seeds:
       - https://asapkerala.gov.in/tenders/
@@ -503,46 +575,54 @@ sites:
 
   - code: KSDC
     name: "Karnataka Skill Development Corporation"
+    tier: Regular
     url: https://kaushalkar.karnataka.gov.in/en
     seeds: []
     notes: "kaushalkar.com no longer resolves (Nov 2026); English pages are under /en"
 
   - code: SVSU
     name: "Shri Vishwakarma Skill University (SVSU)"
+    tier: Regular
     url: https://svsu.ac.in/
     seeds:
       - https://svsu.ac.in/tenders-notices.php
 
   - code: WBSCTVES
     name: "West Bengal State Council of Technical and Vocational Education and Skill Development"
+    tier: Focused
     url: https://webscte.co.in/
     seeds:
       - https://webscte.co.in/Services-Tender
 
   - code: HARTRON
     name: "Haryana State Electronics Development Corporation Limited (HARTRON)"
+    tier: Focused
     url: https://hartron.org.in/
     seeds:
       - https://www.hartron.org.in/tenders-more-than-rs-5-crores/
 
   - code: NTTF
     name: "Nettur Technical Training Foundation (NTTF)"
+    tier: Low
     url: https://www.nttftrg.com/
     seeds: []
 
   - code: MEWAR
     name: "Mewar University"
+    tier: Regular
     url: https://www.mewaruniversity.org/
     seeds: []
 
   - code: MRSPTU
     name: "Maharaja Ranjit Singh Punjab Technical University (MRSPTU)"
+    tier: Regular
     url: https://mrsptu.ac.in/
     seeds:
       - https://mrsptu.ac.in/tenders_quotations.php
 
   - code: CDAC
     name: "CDAC"
+    tier: Regular
     url: https://www.cdac.in/
     js: true
     seeds:
@@ -552,171 +632,202 @@ sites:
 
   - code: HCLTECH
     name: "HCL Technologies"
+    tier: Low
     url: https://www.hcltech.com/
     seeds: []
 
   - code: TNSDC
     name: "Tamil Nadu Skill Development Corporation"
+    tier: Regular
     url: https://www.tnskill.tn.gov.in/
     seeds:
       - https://www.tnskill.tn.gov.in/tenders/
 
   - code: IJIRA
     name: "Indian Jute Industries' Research Association (iJIRA)"
+    tier: Regular
     url: https://www.ijira.org/
     seeds: []
 
   - code: CRISP
     name: "Centre for Research and Industrial Staff Performance (CRISP)"
+    tier: Regular
     url: https://www.crispindia.net/
     seeds: []
 
   - code: NIESBUD
     name: "The National Institute for Entrepreneurship and Small Business Development (NIESBUD)"
+    tier: Regular
     url: https://www.niesbud.nic.in/
     seeds: []
 
   - code: DMRA
     name: "Delhi Metro Rail Academy (DMRA)"
+    tier: Low
     url: https://www.delhimetrorail.com/
     seeds: []
 
   - code: NIWE
     name: "National Institute of Wind Energy"
+    tier: Regular
     url: https://niwe.res.in/
     seeds:
       - https://niwe.res.in/Tenders/tender_data/
 
   - code: BAJAJFIN
     name: "Bajaj Finserv"
+    tier: Low
     url: https://www.bajajfinserv.in/
     seeds: []
 
   - code: DYMT
     name: "Divya Yog Mandir Trust (DYMT)"
+    tier: Regular
     url: https://www.divyayoga.com/
     seeds: []
 
   - code: FDDI
     name: "Footwear Design & Development Institute(FDDI)"
+    tier: Regular
     url: https://fddiindia.com/
     seeds:
       - https://fddiindia.com/tenders
 
   - code: SSU
     name: "Sri Sri University"
+    tier: Low
     url: https://srisriuniversity.edu.in/
     seeds:
       - https://srisriuniversity.edu.in/tenders/
 
   - code: ONDC
     name: "Open Network for Digital Commerce (ONDC)"
+    tier: Regular
     url: https://ondc.org/
     seeds: []
 
   - code: INSPACE
     name: "Indian National Space Promotion and Authorization Centre (IN - SPACe)"
+    tier: Low
     url: https://www.inspace.gov.in/
     seeds: []
 
   - code: KARMAYOGI
     name: "Karmayogi Bharat"
+    tier: Regular
     url: https://karmayogibharat.gov.in/
     js: true
     seeds: []
 
   - code: LTSUP
     name: "Lamrin Tech Skills University, Punjab"
+    tier: Regular
     url: https://ltsu.ac.in/
     seeds:
       - https://www.ltsu.ac.in/job-opportunities
 
   - code: IBM
     name: "IBM"
+    tier: Low
     url: https://www.ibm.com/in-en
     seeds: []
 
   - code: VBABSS
     name: "Vidya Bharti Akhil Bhartiye Shiksha Sansthan"
+    tier: Low
     url: https://vidyabharti.net/
     seeds: []
 
   - code: NISDMSJE
     name: "National Institute of Social Defence, Ministry of Social Justice and Empowerment"
+    tier: Regular
     url: https://nisd.gov.in/
     seeds:
       - https://nisd.gov.in/tenders.html
 
   - code: TPCL
     name: "Tata Power Company Ltd."
+    tier: Regular
     url: https://www.tatapower.com/
     seeds: []
 
   - code: IEI
     name: "The Institution of Engineers (India)"
+    tier: Regular
     url: https://www.ieindia.org/
     js: true
     seeds: []
 
   - code: NITTTR
     name: "National Institute of Technical Teachers Training and Research (NITTTR), Chandigarh"
+    tier: Regular
     url: https://nitttrchd.ac.in/
     seeds: []
 
   - code: WADHWANI
     name: "Skill Development Network (SDN) - Implementing Wadhwani Skills Initiatives"
+    tier: Focused
     url: https://wadhwanifoundation.org/
     js: true
     seeds: []
 
   - code: IIBF
     name: "Indian Institute of Banking and Finance (IIBF)"
+    tier: Low
     url: https://www.iibf.org.in/
     seeds:
       - https://www.iibf.org.in/tender
 
   - code: RTMSSU
     name: "Ratan Tata Maharashtra State Skills University, Mumbai (RTMSSU)"
+    tier: Focused
     url: https://mssu.ac.in/
     seeds:
       - https://mssu.ac.in/tender-expression-of-interest/
 
   - code: WBSCVT
     name: "West Bengal State Council for Vocational Training (WBSCVT)"
+    tier: Focused
     url: https://scvtwb.wb.gov.in/
     seeds: []
 
   - code: INFOSYS
     name: "Infosys Tech"
+    tier: Low
     url: https://www.infosys.com/
     js: true
     seeds: []
 
   - code: UOUHU
     name: "Uttarakhand Open University, Haldwani, Uttarakhand"
+    tier: Focused
     url: https://uou.ac.in/
     seeds: []
 
   - code: SGSU
     name: "Scope Global Skill University"
+    tier: Regular
     url: https://sgsuniversity.ac.in/
     js: true
     seeds: []
 
   - code: SBTETAP
     name: "State Board of Technical Education and Training, Andhra Pradesh"
+    tier: Focused
     url: https://sbtet.ap.gov.in/
     js: true
     seeds: []
 
   - code: NIGST
     name: "National Institute for Geo-informatics Science and Technology, Survey of India (NIGST)"
+    tier: Regular
     url: https://www.surveyofindia.gov.in/
     seeds:
       - https://surveyofindia.gov.in/pages/revised-consolidated-instructions-global-tender
 
   - code: DFCCIL
     name: "Dedicated Freight Corridor Corporation of India Ltd (DFCCIL)"
+    tier: Low
     url: https://dfccil.com/
     seeds:
       - https://dfccil.com/Home/DynemicPages?MenuId=338
@@ -725,50 +836,59 @@ sites:
 
   - code: CA
     name: "Council of Architecture"
+    tier: Low
     url: https://www.coa.gov.in/
     seeds:
       - https://coa.gov.in/tenders.php?layout=&lang=1&level=0&linkid=18&lid=19
 
   - code: FIPL
     name: "Flipkart Internet Private Limited"
+    tier: Low
     url: https://corporate.flipkart.net/
     seeds: []
     notes: "flipkart.com is the shop (product pages, no notices); the corporate site carries company news"
 
   - code: DBAOUG
     name: "Dr.Babasaheb Ambedkar Open University, Gujarat"
+    tier: Focused
     url: https://baou.edu.in/
     seeds: []
 
   - code: BIEAP
     name: "Board of Intermediate Education, Andhra Pradesh"
+    tier: Regular
     url: https://bie.ap.gov.in/
     seeds: []
 
   - code: KKHSOUGA
     name: "Krishna Kanta Handiqui State Open University, Guwahati, Assam"
+    tier: Regular
     url: https://kkhsou.ac.in/
     seeds: []
 
   - code: JDTBU
     name: "JAIN Deemed to be University"
+    tier: Regular
     url: https://www.jainuniversity.ac.in/
     seeds: []
 
   - code: HKCL
     name: "Haryana Knowledge Corporation Ltd (HKCL)"
+    tier: Low
     url: https://hkcl.in/
     seeds:
       - https://hkcl.in/tender
 
   - code: KSOUMK
     name: "Karnataka State Open University, Mysuru, Karnataka"
+    tier: Focused
     url: https://ksoumysuru.ac.in/
     js: true
     seeds: []
 
   - code: SSRGSPB
     name: "Sant Shiromani Ravidas Global Skills Park, Bhopal"
+    tier: Regular
     url: https://www.globalskillspark.in/
     seeds:
       - https://www.globalskillspark.in/index.php/administrative/tenders
@@ -776,125 +896,148 @@ sites:
 
   - code: MH
     name: "Max Healthcare"
+    tier: Low
     url: https://www.maxhealthcare.in/
     js: true
     seeds: []
 
   - code: DETT
     name: "Department of Employment and Training, Telangana"
+    tier: Regular
     url: https://employment.telangana.gov.in/
     seeds: []
 
   - code: NIITF
     name: "NIIT Foundation"
+    tier: Regular
     url: https://www.niitfoundation.org/
     seeds: []
 
   - code: NIRDPR
     name: "The National Institute of Rural Development and Panchayati Raj (NIRD&PR), Hyderabad"
+    tier: Focused
     url: https://nirdpr.org.in/
     seeds:
       - https://nirdpr.org.in/tenders_new.aspx
 
   - code: CII
     name: "Confederation of Indian Industry (CII)"
+    tier: Focused
     url: https://www.cii.in/
     js: true
     seeds: []
 
   - code: CHTIM
     name: "Central Hindi Training Institute, MHA"
+    tier: Regular
     url: https://chti.rajbhasha.gov.in/
     seeds: []
 
   - code: GTRTCK
     name: "Government Tool Room and Training Centre, Karnataka"
+    tier: Regular
     url: https://gttc.karnataka.gov.in/
     js: true
     seeds: []
 
   - code: HAL
     name: "Hindustan Aeronautics Limited"
+    tier: Low
     url: https://hal-india.co.in/
     seeds: []
 
   - code: MPBOUBMP
     name: "M. P. Bhoj Open University, Bhopal, Madhya Pradesh"
+    tier: Regular
     url: https://mpbou.edu.in/
     seeds: []
 
   - code: BESTIU
     name: "Bharatiya Engineering Science and Technology Innovation University (BESTIU)"
+    tier: Low
     url: https://bestiu.edu.in/
     seeds: []
 
   - code: HPKVN
     name: "Himachal Pradesh Kaushal Vikas Nigam"
+    tier: Focused
     url: https://hpkvn.in/
     seeds:
       - https://hpkvn.in/tenders-circulars/
 
   - code: SSPU
     name: "Symbiosis Skills and Professional University"
+    tier: Regular
     url: https://www.sspu.ac.in/
     seeds: []
 
   - code: YCMOUN
     name: "Yashwantrao Chavan Maharashtra Open University, Nashik"
+    tier: Focused
     url: https://ycmou.ac.in/
     seeds:
       - https://ycmou.ac.in/tenders/
 
   - code: APEXU
     name: "Apex University"
+    tier: Focused
     url: https://www.apexuniversity.co.in/
     seeds: []
 
   - code: MSBSHSE
     name: "Maharashtra State Board of Secondary and Higher Secondary Education (MSBSHSE)"
+    tier: Focused
     url: https://www.mahahsscboard.in/
     js: true
     seeds: []
 
   - code: WSC
     name: "World Skill Center"
+    tier: Focused
     url: https://worldskillcenter.org/
     seeds:
       - https://worldskillcenter.org/en/sun/tenders
 
   - code: GBSHSE
     name: "Goa Board of Secondary and Higher Secondary Education"
+    tier: Regular
     url: https://www.gbshse.in/
     seeds: []
 
   - code: PSEB
     name: "Punjab School Education Board"
+    tier: Regular
     url: https://www.pseb.ac.in/
     seeds:
       - https://www.pseb.ac.in/tenders
 
   - code: MBSE
     name: "Mizoram Board of School Education"
+    tier: Regular
     url: https://mbse.edu.in/
     seeds: []
 
   - code: BSEAP
     name: "Board of Secondary Education, Andhra Pradesh"
+    tier: Regular
     url: https://www.bse.ap.gov.in/
     seeds: []
 
   - code: NBSE
     name: "Nagaland Board of School Education"
+    tier: Regular
     url: https://nbsenl.edu.in/
     seeds: []
   
   - code: LPGVC
     name: "LPG Vitrak Chayan"
+    tier: Focused
     url: https://www.lpgvitarakchayan.in/
     seeds: []
 
   - code: PPDC
     name: "Petrol Pump Dealer Chayan (PPDC)"
+    tier: Focused
     url: https://www.petrolpumpdealerchayan.in/
     js: true
     seeds: []

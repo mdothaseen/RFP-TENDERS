@@ -216,6 +216,9 @@ def build_records(store, keywords: Keywords, settings: Settings, sites: dict[str
             "prebid": parse_any(ai.get("prebid_date")) if ai.get("prebid_date") else None,
             "emd": ai.get("emd", ""),
             "fee": ai.get("tender_fee", ""),
+            "value": ai.get("estimated_value", ""),
+            # "Page updated: <url>" rows: the page text changed but no new document was found on it.
+            "page_change": (row["title"] or "").startswith("Page updated:"),
             "who": ai.get("who_can_apply", ""),
             "eligibility": ai.get("eligibility_summary", ""),
             "summary": ai.get("scope_summary", "") or (row["context"] if row["context"] != row["title"] else ""),

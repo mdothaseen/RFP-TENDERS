@@ -54,6 +54,7 @@ class Site:
     exclude: list[str] = field(default_factory=list)
     keep_fragments: bool = False
     notes: str = ""
+    tier: str = "Regular"          # Focused / Regular / Low: order and depth in the summary email
 
     @property
     def host(self) -> str:
@@ -111,6 +112,16 @@ def _compile(patterns) -> list[re.Pattern]:
     return [re.compile(p, re.I) for p in (patterns or [])]
 
 
+TIERS = ("Focused", "Regular", "Low")
+
+
+def _tier(value) -> str:
+    text = str(value or "").strip().capitalize()
+    if value and text not in TIERS:
+        raise ValueError(f"sites.yaml: tier must be one of {', '.join(TIERS)} (got {value!r})")
+    return text or "Regular"
+
+
 def load_sites() -> list[Site]:
     data = _read_yaml("sites.yaml")
     sites = []
@@ -126,6 +137,7 @@ def load_sites() -> list[Site]:
             exclude=[str(e) for e in raw.get("exclude") or []],
             keep_fragments=bool(raw.get("keep_fragments", False)),
             notes=str(raw.get("notes") or ""),
+            tier=_tier(raw.get("tier")),
         ))
     codes = [s.code for s in sites]
     duplicates = {c for c in codes if codes.count(c) > 1}

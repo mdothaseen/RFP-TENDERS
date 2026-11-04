@@ -1,30 +1,40 @@
-"""Professional HTML email for the daily digest (table layout + inline styles for email clients)."""
+"""HTML summary email (table layout + inline styles for email clients).
+
+Layout: verdict, one summary row per category (Focused / Regular / Low), tenders closing soon, then one section per
+category: the status of every organisation in it, what is new organisation by organisation, the organisations with
+nothing new, and the websites that could not be read (with the reason).
+"""
 
 from __future__ import annotations
 
 import html
+import re
 from datetime import date
 from pathlib import Path
 
-NAVY = "#312E81"      # deep indigo
-ACCENT = "#4F46E5"    # links, buttons, top bar
+from ..config import TIERS
+
+ACCENT = "#4F46E5"
 INK = "#0F172A"
 BORDER = "#E2E8F0"
 MUTED = "#64748B"
 PAGE = "#F1F5F9"
-REL_STYLE = {
-    "High": ("#FDE2E1", "#B42318"),
-    "Medium": ("#FEF0C7", "#B54708"),
-    "Low": ("#EEF2F6", "#475467"),
-}
+RED, AMBER, GREEN_INK = "#B42318", "#B54708", "#067647"
+REL_STYLE = {"High": ("#FDE2E1", RED), "Medium": ("#FEF0C7", AMBER), "Low": ("#EEF2F6", "#475467")}
+TIER_STYLE = {"Focused": (RED, "#FEF3F2"), "Regular": (AMBER, "#FFFAEB"), "Low": ("#475467", "#F8FAFC")}
+TIER_NOTE = {"Focused": "Your priority organisations: full details.",
+             "Regular": "Every organisation's status, with details of what is new.",
+             "Low": "Every organisation's status, with the main new items."}
+DETAIL_ROWS = {"Focused": 15, "Regular": 8, "Low": 5}   # new items listed per organisation
+GREEN_CHIP = ("#ECFDF3", GREEN_INK, "#ABEFC6")
+RED_CHIP = ("#FEF3F2", RED, "#FECDCA")
+NOT_READ = ("failed", "partial")
+TD = f"padding:8px 10px;border-bottom:1px solid {BORDER}"   # font and colour come from the outer table
+SMALL = f"color:{MUTED};font-size:11px;line-height:1.35"
 
 
 def esc(value) -> str:
     return html.escape(str(value or ""))
-
-
-def _fmt(d: date | None) -> str:
-    return f"<span style='white-space:nowrap'>{d:%d %b %Y}</span>" if d else "—"
 
 
 def uploaded_text(r: dict) -> str:
@@ -35,259 +45,326 @@ def uploaded_text(r: dict) -> str:
     return d.strftime("%b %Y") if r.get("uploaded_month_only") else d.strftime("%d %b %Y")
 
 
-def _uploaded(r: dict) -> str:
-    text = uploaded_text(r)
-    if not text:
-        return f"<span style='color:{MUTED}'>—</span>"
-    if r.get("uploaded_month_only"):
-        return f"<span style='white-space:nowrap'>{esc(text)}</span><div style='color:{MUTED};font-size:11px'>month only</div>"
-    return f"<span style='white-space:nowrap'>{esc(text)}</span>"
+def _plural(n: int, word: str) -> str:
+    return f"{n} {word}{'' if n == 1 else 's'}"
 
 
-def _days_left(d: date | None, today: date) -> str:
-    if not d:
-        return "—"
-    n = (d - today).days
-    if n < 0:
-        return "Closed"
-    if n == 0:
-        return "<b style='color:#B42318'>Today</b>"
-    color = "#B42318" if n <= 3 else "#B54708" if n <= 7 else "#1F2937"
-    return f"<b style='color:{color}'>{n} day{'s' if n != 1 else ''}</b>"
+def _num(n: int, color: str) -> str:
+    return f"<b style='color:{color}'>{n}</b>" if n else f"<span style='color:{MUTED}'>0</span>"
+
+
+def _chip(text: str, bg: str = "#F8FAFC", fg: str = INK, border: str = BORDER) -> str:
+    return (f"<span style='display:inline-block;margin:2px;background:{bg};color:{fg};border:1px solid {border};"
+            f"border-radius:6px;padding:2px 7px;font-size:12px;font-weight:600'>{esc(text)}</span>")
 
 
 def _pill(relevance: str) -> str:
-    bg, fg = REL_STYLE.get(relevance or "", ("#EEF2F6", "#475467"))
-    return (f"<span style='background:{bg};color:{fg};border-radius:999px;padding:3px 10px;"
-            f"font-size:11px;font-weight:600;white-space:nowrap'>&#9679; {esc(relevance or 'n/a')}</span>")
+    bg, fg = REL_STYLE.get(relevance or "", REL_STYLE["Low"])
+    return (f"<span style='background:{bg};color:{fg};border-radius:999px;padding:2px 9px;font-size:11px;"
+            f"font-weight:600;white-space:nowrap'>{esc(relevance or 'n/a')}</span>")
 
 
-def _chip(text: str, strong: bool = False) -> str:
-    color, weight = (INK, "700") if strong else (MUTED, "500")
-    return (f"<span style='background:#F8FAFC;border:1px solid {BORDER};border-radius:6px;padding:2px 7px;"
-            f"font-size:12px;font-weight:{weight};color:{color};white-space:nowrap'>{esc(text)}</span>")
+def _last_date(d: date | None, today: date) -> str:
+    if not d:
+        return f"<span style='color:{MUTED}'>&#8212;</span>"
+    n = (d - today).days
+    color = RED if n <= 3 else AMBER if n <= 7 else INK
+    left = "Today" if n == 0 else "Closed" if n < 0 else f"{_plural(n, 'day')} left"
+    return f"<span style='white-space:nowrap'>{d:%d %b %Y}</span><div style='color:{color};font-size:11px;font-weight:700'>{left}</div>"
 
 
-def _title(r: dict, limit: int = 150) -> str:
-    """Title as a clickable link to the document (or the page it was found on), plus a clear 'View' link."""
+def _uploaded(r: dict) -> str:
+    text = uploaded_text(r)
+    if not text:
+        return f"<span style='color:{MUTED}'>&#8212;</span>"
+    extra = f"<div style='{SMALL}'>month only</div>" if r.get("uploaded_month_only") else ""
+    return f"<span style='white-space:nowrap'>{esc(text)}</span>{extra}"
+
+
+def _link(r: dict, limit: int = 160) -> str:
     title = esc((r.get("title") or "")[:limit])
-    link = r.get("url") or r.get("source")
-    if not link:
+    target = r.get("url") or r.get("source")
+    if not target:
         return f"<b>{title}</b>"
-    is_doc = r.get("file_type") not in (None, "", "WEB")
-    label = f"Open {esc(r['file_type'])}" if is_doc else "Open page"
-    return (f"<a href='{esc(link)}' target='_blank' style='color:{INK};text-decoration:none;font-weight:600;"
-            f"font-size:14px;line-height:1.4'>{title}</a><div style='margin-top:6px'><a href='{esc(link)}' "
-            f"target='_blank' style='display:inline-block;font-size:12px;font-weight:600;color:{ACCENT};"
-            f"text-decoration:none;border:1px solid #C7D2FE;background:#EEF2FF;border-radius:6px;padding:3px 10px'>"
-            f"{label} &#8599;</a></div>")
+    return f"<a href='{esc(target)}' target='_blank' style='color:{INK};font-weight:600;text-decoration:none'>{title}</a>"
 
 
-def _card(value, label: str, color: str) -> str:
-    return (f"<td width='25%' style='padding:6px'><div style='border:1px solid {BORDER};"
-            f"border-top:3px solid {color};border-radius:12px;padding:16px 14px;background:#FFFFFF'>"
-            f"<div style='font-size:12px;color:{MUTED};font-weight:500'>{esc(label)}</div>"
-            f"<div style='font-size:30px;font-weight:700;color:{color};margin-top:6px;line-height:1'>{esc(value)}</div>"
-            f"</div></td>")
+def _facts(r: dict) -> str:
+    """What the AI read in the document: scope, who can apply, money, reference and what to do."""
+    out = ""
+    if r.get("summary"):
+        out += f"<div style='color:#334155;font-size:12px;margin-top:5px;line-height:1.45'>{esc(r['summary'][:260])}</div>"
+    if r.get("who"):
+        out += f"<div style='font-size:12px;margin-top:4px'><b style='color:{MUTED}'>Who can apply:</b> {esc(r['who'][:180])}</div>"
+    money = [(k, r.get(f)) for k, f in (("Ref", "ref"), ("EMD", "emd"), ("Fee", "fee"), ("Value", "value")) if r.get(f)]
+    if money:
+        out += "<div style='margin-top:5px'>" + "".join(_chip(f"{k}: {str(v)[:40]}") for k, v in money) + "</div>"
+    if r.get("action"):
+        out += f"<div style='font-size:12px;margin-top:5px;color:{ACCENT};font-weight:600'>&#10148; {esc(r['action'][:180])}</div>"
+    return out
 
 
-def _section(title: str, subtitle: str = "") -> str:
-    sub = f"<div style='font-size:12px;color:{MUTED}'>{esc(subtitle)}</div>" if subtitle else ""
-    return (f"<tr><td style='padding:28px 28px 10px 28px'><div style='font-size:17px;font-weight:700;"
-            f"color:{INK}'>{esc(title)}</div>{sub}</td></tr>")
+def _relevance(r: dict) -> str:
+    why = r.get("relevance_reason") or ""
+    return _pill(r.get("relevance")) + (f"<div style='{SMALL};margin-top:4px'>{esc(why[:110])}</div>" if why else "")
 
 
-def _section_html(title_html: str, subtitle: str = "") -> str:
-    """Like _section, but the title may contain HTML entities (emoji dots)."""
-    sub = f"<div style='font-size:12px;color:{MUTED};margin-top:2px'>{esc(subtitle)}</div>" if subtitle else ""
-    return (f"<tr><td style='padding:28px 28px 10px 28px'><div style='font-size:17px;font-weight:700;"
-            f"color:{INK}'>{title_html}</div>{sub}</td></tr>")
+def _table(headers: list[str], rows: list[list[str]], widths: list[str]) -> str:
+    th = "".join(f"<th align='left' style='background:#F8FAFC;color:{MUTED};font-size:11px;font-weight:600;"
+                 f"text-transform:uppercase;padding:8px 10px;border-bottom:1px solid {BORDER};width:{w}'>{esc(h)}</th>"
+                 for h, w in zip(headers, widths))
+    body = "".join("<tr>" + "".join(f"<td valign='top' style='{TD}'>{c}</td>" for c in row) + "</tr>" for row in rows)
+    return (f"<table width='100%' cellpadding='0' cellspacing='0' style='border:1px solid {BORDER};border-radius:10px;"
+            f"border-collapse:separate;border-spacing:0;overflow:hidden;font-size:13px;color:{INK}'><tr>{th}</tr>{body}</table>")
 
 
-def _table(headers: list[str], rows: list[list[str]], widths: list[str] | None = None) -> str:
-    th = "".join(
-        f"<th align='left' style='background:#F8FAFC;color:{MUTED};font-size:11px;font-weight:600;"
-        f"text-transform:uppercase;letter-spacing:.4px;padding:10px 12px;border-bottom:1px solid {BORDER};"
-        f"{'width:' + widths[i] + ';' if widths else ''}'>{esc(h)}</th>" for i, h in enumerate(headers))
-    body = []
-    for n, row in enumerate(rows):
-        bg = "#FFFFFF"
-        tds = "".join(f"<td valign='top' style='padding:14px 12px;font-size:13px;color:{INK};"
-                      f"border-bottom:1px solid {BORDER};"
-                      f"background:{bg}'>{cell}</td>" for cell in row)
-        body.append(f"<tr>{tds}</tr>")
-    return (f"<tr><td style='padding:0 28px'><table width='100%' cellpadding='0' cellspacing='0' "
-            f"style='border-collapse:separate;border-spacing:0;border:1px solid {BORDER};border-radius:12px;"
-            f"overflow:hidden'><tr>{th}</tr>{''.join(body)}</table>"
-            f"</td></tr>")
+def _short_url(url: str) -> str:
+    return re.sub(r"^https?://(www\.)?", "", url or "")[:55]
+
+
+def _order(items: list[dict]) -> list[dict]:
+    rank = {"High": 0, "Medium": 1, "Low": 2}
+    return sorted(items, key=lambda r: (bool(r.get("page_change")), not r["tender"], rank.get(r["relevance"], 3),
+                                        (r["last_date"] or date.max).toordinal()))
+
+
+class _Category:
+    """Everything one category (Focused / Regular / Low) shows in the email."""
+
+    def __init__(self, name: str, sites: list[dict], items: list[dict], today: date):
+        self.name, self.sites, self.today = name, sites, today
+        self.items = _order(items)
+        self.by_org: dict[str, list[dict]] = {}
+        for r in self.items:
+            self.by_org.setdefault(r["org"], []).append(r)
+        self.failed = [s for s in sites if s["status"] in NOT_READ]
+        self.quiet = [s for s in sites if s["code"] not in self.by_org and s["status"] not in NOT_READ]
+
+    def count(self, test) -> int:
+        return sum(1 for r in self.items if test(r))
+
+    def closing(self, r: dict, days: int = 7) -> bool:
+        return bool(r["last_date"] and 0 <= (r["last_date"] - self.today).days <= days)
+
+
+def _site_cell(s: dict) -> str:
+    if s["status"] in NOT_READ:
+        word = "partly read" if s["status"] == "partial" else "not read"
+        return f"<b style='color:{RED}'>&#10007; {word}</b><div style='{SMALL}'>{esc(s['reason'])}</div>"
+    if s["status"] == "ok":
+        return f"<b style='color:{GREEN_INK}'>&#10003; OK</b>"
+    return f"<span style='color:{MUTED}'>{esc(s['reason'] or s['status'])}</span>"
+
+
+def _org_cell(s: dict) -> str:
+    return (f"<a href='{esc(s['url'])}' target='_blank' style='color:{INK};font-weight:700;text-decoration:none'>"
+            f"{esc(s['code'])}</a><div style='{SMALL}'>{esc(s['name'][:60])}</div>")
+
+
+def _scoreboard(cat: _Category) -> str:
+    def key(s):
+        its = cat.by_org.get(s["code"], [])
+        return (-sum(r["tender"] for r in its), -len(its), s["status"] not in NOT_READ, s["code"])
+
+    rows = []
+    for s in sorted(cat.sites, key=key):
+        its = cat.by_org.get(s["code"], [])
+        real = [r for r in its if not r.get("page_change")]
+        n_t = sum(r["tender"] for r in real)
+        pages = len(its) - len(real)
+        if real:
+            latest = _link(real[0], 80)
+        else:
+            latest = f"<span style='color:{MUTED}'>{'Only page changes' if pages else 'Nothing new'}</span>"
+        rows.append([_org_cell(s), _site_cell(s), _num(n_t, RED), _num(len(real) - n_t, INK), _num(pages, MUTED),
+                     _num(sum(cat.closing(r) for r in real if r["tender"]), AMBER), latest])
+    return _table(["Organisation", "Website", "Tenders", "Updates", "Pages changed", "Closing ≤7d", "Latest"], rows,
+                  ["19%", "15%", "8%", "8%", "9%", "9%", "32%"])
+
+
+def _org_details(cat: _Category, names: dict, urls: dict) -> str:
+    out = []
+    ordered = sorted(cat.by_org.items(), key=lambda kv: (-sum(r["tender"] for r in kv[1]), -len(kv[1]), kv[0]))
+    for code, its in ordered:
+        real = [r for r in its if not r.get("page_change")]
+        pages = [r for r in its if r.get("page_change")]
+        n_t = sum(r["tender"] for r in real)
+        counts = " · ".join(x for x in (_plural(n_t, "tender") if n_t else "",
+                                        _plural(len(real) - n_t, "update") if len(real) - n_t else "",
+                                        _plural(len(pages), "page change") if pages else "") if x)
+        name = names.get(code) or its[0].get("org_name") or code
+        site_link = (f" <a href='{esc(urls[code])}' target='_blank' style='font-size:12px;color:{ACCENT}'>website &#8599;</a>"
+                     if urls.get(code) else "")
+        out.append(f"<div style='margin:18px 0 6px;padding-top:10px;border-top:1px dashed {BORDER}'>"
+                   f"<span style='font-size:15px;font-weight:800;color:{INK}'>{esc(code)}</span> <span style='color:{MUTED};"
+                   f"font-size:12px'>{esc(name if name != code else '')}{' · ' if name != code else ''}{counts}</span>"
+                   f"{site_link}</div>")
+        shown = real[:DETAIL_ROWS[cat.name]]
+        if shown:
+            out.append(_table(["Type", "Title and details", "Uploaded", "Last date", "Relevance"],
+                              [[_chip(r["category"]), _link(r) + _facts(r), _uploaded(r), _last_date(r["last_date"], cat.today),
+                                _relevance(r)] for r in shown], ["10%", "52%", "11%", "12%", "15%"]))
+        if len(real) > len(shown):
+            out.append(f"<div style='font-size:12px;color:{MUTED};margin-top:4px'>+ {len(real) - len(shown)} more from "
+                       f"{esc(code)} in the attached Excel</div>")
+        if pages:
+            links = " · ".join(f"<a href='{esc(p['url'])}' target='_blank' style='color:{ACCENT}'>{esc(_short_url(p['url']))}</a>"
+                               for p in pages[:6])
+            more = f" · +{len(pages) - 6} more" if len(pages) > 6 else ""
+            out.append(f"<div style='margin-top:6px;font-size:12px;color:{MUTED}'>&#8635; <b>{_plural(len(pages), 'page')} "
+                       f"changed</b> (no new document found on them): {links}{more}</div>")
+    return "".join(out)
+
+
+def _status_lists(cat: _Category) -> str:
+    out = (f"<div style='margin-top:16px;font-size:13px'><b style='color:{GREEN_INK}'>&#10003; Checked, nothing new "
+           f"({len(cat.quiet)}):</b><br>" + ("".join(_chip(s["code"], *GREEN_CHIP) for s in cat.quiet) or "&#8212;") + "</div>")
+    if cat.failed:
+        out += (f"<div style='margin-top:10px;font-size:13px'><b style='color:{RED}'>&#9888; Could not be read, please check "
+                f"these websites yourself ({len(cat.failed)}):</b>"
+                + "".join(f"<div style='margin:3px 0'>{_chip(s['code'], *RED_CHIP)} <a href='{esc(s['url'])}' target='_blank' "
+                          f"style='color:{ACCENT};font-size:12px'>{esc(s['url'])}</a> <span style='color:{MUTED};font-size:12px'>"
+                          f"· {esc(s['reason'])}</span></div>" for s in cat.failed) + "</div>")
+    return out
+
+
+def _site_list(report: dict, items: list[dict]) -> list[dict]:
+    """Every website with its latest status; without a status list (tests), the organisations seen in the items."""
+    if report.get("site_status"):
+        return report["site_status"]
+    seen = {}
+    for r in items:
+        seen.setdefault(r["org"], {"code": r["org"], "name": r.get("org_name") or r["org"], "url": "",
+                                   "tier": r.get("tier") or "Regular", "status": "ok", "reason": ""})
+    return list(seen.values())
 
 
 def build_email(report: dict, run, problems: list[str], ai_summary: dict | None, today: date,
                 closing_days: int, sites_checked: int) -> tuple[str, str]:
     """Returns (subject, html)."""
-    rank = {"High": 0, "Medium": 1, "Low": 2}
-    # Tenders whose last date has already passed are left out of the email (they stay in Excel).
-    already_closed = [r for r in report["new_tenders"] if r["last_date"] and r["last_date"] < today]
-    new_tenders = sorted([r for r in report["new_tenders"] if r not in already_closed], key=lambda r: (
-        rank.get(r["relevance"], 3), (r["last_date"] or date.max).toordinal()))
-    other_new = [r for r in report["new"] if not r["tender"]]
-    closing = report["closing"]
-    open_tenders = report["open_tenders"]
-    high_new = [r for r in new_tenders if r["relevance"] == "High"]
-    urgent = [r for r in closing if r["relevance"] in ("High", "Medium")]
     baseline = bool(run["baseline"])
-
-    # ---- verdict: does the reader need to open the Excel?
-    if high_new or urgent:
-        bits = []
-        if high_new:
-            bits.append(f"{len(high_new)} high-relevance new tender{'s' if len(high_new) != 1 else ''}")
-        if urgent:
-            bits.append(f"{len(urgent)} relevant tender{'s' if len(urgent) != 1 else ''} closing within {closing_days} days")
-        verdict = ("#B42318", "#FEF3F2", "ACTION NEEDED", " and ".join(bits) + ". Please review the details below.")
-    elif new_tenders:
-        verdict = ("#B54708", "#FFFAEB", "REVIEW",
-                   f"{len(new_tenders)} new tender{'s' if len(new_tenders) != 1 else ''} found, none marked high "
-                   "relevance. A quick look at the table below is enough.")
-    else:
-        verdict = ("#067647", "#ECFDF3", "NO ACTION NEEDED",
-                   "No new tenders today. You do not need to open the Excel.")
-    if baseline:
-        verdict = (NAVY, "#EEF4FF", "FIRST RUN COMPLETE",
-                   f"All {sites_checked} websites were read for the first time. Tenders from the last 30 days are "
-                   "listed below; from tomorrow you will only get what is new.")
-
+    already_closed = [r for r in report["new"] if r["last_date"] and r["last_date"] < today]
+    new = [r for r in report["new"] if not (r["last_date"] and r["last_date"] < today)]
+    sites = _site_list(report, new)
+    tier_of = {s["code"]: s["tier"] for s in sites}
+    names = {s["code"]: s["name"] for s in sites}
+    urls = {s["code"]: s["url"] for s in sites if s["url"]}
+    cats = {t: _Category(t, [s for s in sites if s["tier"] == t],
+                         [r for r in new if tier_of.get(r["org"], "Regular") == t], today) for t in TIERS}
+    closing = sorted(report["closing"], key=lambda r: (TIERS.index(tier_of.get(r["org"], "Regular")), r["last_date"]))
+    focused_tenders = cats["Focused"].count(lambda r: r["tender"])
+    high_new = sum(c.count(lambda r: r["tender"] and r["relevance"] == "High") for c in cats.values())
+    urgent = [r for r in closing if r["relevance"] in ("High", "Medium")]
+    with_news = sum(len(c.by_org) for c in cats.values())
+    not_read = sum(len(c.failed) for c in cats.values())
     day = today.strftime("%d %b %Y")
-    subject = f"SSC Tender Update | {day} | "
-    if baseline:
-        subject += "First run complete"
-    elif new_tenders or closing:
-        subject += f"{len(new_tenders)} new tender{'s' if len(new_tenders) != 1 else ''}"
-        if closing:
-            subject += f" · {len(closing)} closing this week"
-        if high_new:
-            subject = "[Action needed] " + subject
-    else:
-        subject += "No new tenders"
 
-    failed = len(problems)
+    # ---- verdict and subject
+    if baseline:
+        verdict = ("#312E81", "#EEF4FF", "FIRST RUN COMPLETE",
+                   f"All {sites_checked} websites were read for the first time. Tenders from the last 30 days are "
+                   "listed below; from the next scan you will only get what is new.")
+        subject = f"SSC Tender Update | {day} | First run complete"
+    else:
+        if focused_tenders or high_new or urgent:
+            bits = []
+            if focused_tenders:
+                bits.append(f"{_plural(focused_tenders, 'new tender')} from your focused organisations")
+            if high_new:
+                bits.append(_plural(high_new, "high-relevance new tender"))
+            if urgent:
+                bits.append(f"{_plural(len(urgent), 'relevant tender')} closing within {closing_days} days")
+            verdict = (RED, "#FEF3F2", "ACTION NEEDED", "; ".join(bits) + ".")
+        elif with_news:
+            verdict = (AMBER, "#FFFAEB", "REVIEW", f"{_plural(with_news, 'organisation')} with something new, "
+                       "none of it urgent. The status of every website is below.")
+        else:
+            verdict = (GREEN_INK, "#ECFDF3", "NO ACTION NEEDED", "Nothing new on any website. The status of every "
+                       "website is below.")
+        subject = (f"SSC Tender Update | {day} | Focused: {_plural(focused_tenders, 'new tender')} · "
+                   f"{with_news} orgs with news · {len(closing)} closing in {closing_days} days")
+        if verdict[2] == "ACTION NEEDED":
+            subject = "[Action needed] " + subject
+
     color, bg, label, message = verdict
-    rows = [
-        f"<tr><td style='height:4px;background:{ACCENT};font-size:0;line-height:0'>&nbsp;</td></tr>",
-        f"<tr><td style='padding:26px 28px 6px 28px'>"
-        f"<div style='font-size:11px;font-weight:700;letter-spacing:1.2px;color:{ACCENT}'>TENDER TRACKER</div>"
-        f"<div style='font-size:24px;font-weight:700;color:{INK};margin-top:6px'>SSC Tender &amp; Notice Update</div>"
-        f"<div style='font-size:13px;color:{MUTED};margin-top:6px'>{esc(day)} &nbsp;&#183;&nbsp; {sites_checked} "
-        f"websites checked &nbsp;&#183;&nbsp; Sector Skill Councils, NSDC, NCVET and awarding bodies</div></td></tr>",
-        f"<tr><td style='padding:18px 28px 6px 28px'><div style='background:{bg};padding:14px 16px;"
-        f"border-radius:12px'><div style='font-size:11px;font-weight:700;color:{color};letter-spacing:.8px'>"
-        f"&#9679; {esc(label)}</div><div style='font-size:14px;color:{INK};margin-top:6px;line-height:1.5'>"
-        f"{esc(message)}</div></div></td></tr>",
-        "<tr><td style='padding:12px 22px'><table width='100%' cellpadding='0' cellspacing='0'><tr>"
-        + _card(len(new_tenders), "New tenders / RFP / EOI", NAVY)
-        + _card(len(closing), f"Closing in {closing_days} days", "#B42318" if closing else NAVY)
-        + _card(len(open_tenders), "Open tenders in total", NAVY)
-        + _card(f"{sites_checked - failed}/{sites_checked}", "Websites checked OK", "#B42318" if failed else "#067647")
-        + "</tr></table></td></tr>",
-    ]
+    o = [f"<tr><td style='height:4px;background:{ACCENT};font-size:0;line-height:0'>&nbsp;</td></tr><tr><td style='padding:22px 24px 26px'>",
+         f"<div style='font-size:11px;font-weight:800;letter-spacing:1.2px;color:{ACCENT}'>TENDER TRACKER</div>",
+         f"<div style='font-size:24px;font-weight:800;color:{INK};margin-top:4px'>SSC Tender &amp; Notice Update · {esc(day)}</div>",
+         f"<div style='color:{MUTED};font-size:13px;margin:4px 0 12px'>All {len(sites) or sites_checked} websites checked · "
+         f"{len(sites) - not_read} read OK · {not_read} not read · {_plural(with_news, 'organisation')} with something new</div>",
+         f"<div style='background:{bg};border-radius:10px;padding:12px 14px;margin-bottom:12px'><div style='font-size:11px;"
+         f"font-weight:800;color:{color};letter-spacing:.8px'>&#9679; {esc(label)}</div><div style='font-size:14px;color:{INK};"
+         f"margin-top:4px;line-height:1.5'>{esc(message)}</div></div>"]
+
+    summary = []
+    for t, c in cats.items():
+        summary.append([f"<b style='color:{TIER_STYLE[t][0]}'>{t}</b>", str(len(c.sites)),
+                        _num(len(c.sites) - len(c.failed), GREEN_INK), _num(len(c.failed), RED), _num(len(c.by_org), INK),
+                        _num(c.count(lambda r: r["tender"]), RED),
+                        _num(c.count(lambda r: not r["tender"] and not r.get("page_change")), INK),
+                        _num(sum(1 for r in closing if tier_of.get(r["org"], "Regular") == t), AMBER)])
+    o.append(_table(["Category", "Websites", "Read OK", "Not read", "Orgs with news", "New tenders", "Other updates",
+                     f"Closing ≤{closing_days}d"], summary, ["14%", "11%", "11%", "11%", "13%", "13%", "13%", "14%"]))
 
     if closing:
-        rows.append(_section(f"Closing within {closing_days} days", "Tenders already announced earlier."))
-        rows.append(_table(["Org", "Title", "Uploaded on", "Last date", "Time left", "Relevance"], [
-            [_chip(r["org"], True), _title(r, 130), _uploaded(r), _fmt(r["last_date"]),
-             _days_left(r["last_date"], today), _pill(r["relevance"])] for r in closing[:15]],
-            ["9%", "45%", "13%", "13%", "10%", "10%"]))
+        o.append(f"<div style='margin:22px 0 8px;font-size:16px;font-weight:800;color:{INK}'>&#9200; Closing within "
+                 f"{closing_days} days <span style='font-weight:400;font-size:12px;color:{MUTED}'>all categories, "
+                 "including tenders announced earlier</span></div>")
+        o.append(_table(["Category", "Org", "Title and details", "Last date", "Relevance"], [
+            [f"<b style='color:{TIER_STYLE[tier_of.get(r['org'], 'Regular')][0]};font-size:12px'>"
+             f"{tier_of.get(r['org'], 'Regular')}</b>", _chip(r["org"]), _link(r, 140) + _facts(r),
+             _last_date(r["last_date"], today), _relevance(r)] for r in closing[:25]],
+            ["10%", "9%", "54%", "12%", "15%"]))
+        if len(closing) > 25:
+            o.append(f"<div style='font-size:12px;color:{MUTED};margin-top:4px'>+ {len(closing) - 25} more in the attached Excel</div>")
 
-    # One block per organisation: its new tenders and its other updates together, with the usual columns.
-    headers = ["Org", "Type", "Title / what to do", "Uploaded on", "Last date", "Time left", "Relevance"]
-    widths = ["8%", "9%", "39%", "12%", "12%", "9%", "11%"]
+    for t, c in cats.items():
+        if not c.sites and not c.items:
+            continue
+        fg, tint = TIER_STYLE[t]
+        o.append(f"<div style='margin:34px 0 8px;background:{tint};border-left:6px solid {fg};padding:12px 16px;"
+                 f"border-radius:10px'><div style='font-size:18px;font-weight:800;color:{fg}'>{t.upper()} ORGANISATIONS</div>"
+                 f"<div style='font-size:13px;color:{INK};margin-top:2px'>{len(c.sites)} checked · <b>{len(c.by_org)}</b> with "
+                 f"news · {len(c.quiet)} nothing new · <b style='color:{RED}'>{len(c.failed)}</b> not read</div>"
+                 f"<div style='font-size:12px;color:{MUTED}'>{TIER_NOTE[t]}</div></div>")
+        if c.sites:
+            o.append(f"<div style='font-size:13px;font-weight:700;color:{INK};margin:12px 0 6px'>1. Status of every "
+                     f"{t.lower()} organisation</div>")
+            o.append(_scoreboard(c))
+        o.append(f"<div style='font-size:13px;font-weight:700;color:{INK};margin:20px 0 0'>2. What is new, organisation by "
+                 "organisation</div>")
+        o.append(_org_details(c, names, urls) or f"<div style='color:{MUTED};font-size:13px;margin-top:6px'>Nothing new "
+                 "in this category.</div>")
+        if c.sites:
+            o.append(_status_lists(c))
 
-    def item_row(r: dict) -> list[str]:
-        detail = _title(r)
-        extra = r.get("action") or r.get("who") or ""
-        if extra:
-            detail += f"<div style='color:{MUTED};font-size:12px;margin-top:6px'>{esc(extra[:180])}</div>"
-        return [_chip(r["org"], True), _chip(r["category"]), detail, _uploaded(r),
-                _fmt(r["last_date"]), _days_left(r["last_date"], today), _pill(r["relevance"])]
+    if already_closed:
+        o.append(f"<div style='margin-top:20px;background:#F8FAFC;border:1px solid {BORDER};border-radius:10px;padding:10px 14px;"
+                 f"font-size:13px;color:{MUTED}'>{_plural(len(already_closed), 'new item')} with a last date already passed: "
+                 "not listed here, they are in the attached Excel.</div>")
 
-    relevant = [r for r in new_tenders if r["relevance"] in ("High", "Medium")]
-    low = [r for r in new_tenders if r["relevance"] not in ("High", "Medium")]
-    by_org: dict[str, list[dict]] = {}
-    for r in relevant + other_new:
-        by_org.setdefault(r["org"], []).append(r)
-
-    def org_rank(item):
-        org, items = item
-        tenders = [r for r in items if r["tender"]]
-        return (-sum(r["relevance"] == "High" for r in tenders), -len(tenders), -len(items), org)
-
-    if by_org:
-        ordered = sorted(by_org.items(), key=org_rank)
-        shown_orgs = ordered[:20]
-        subtitle = ("Each organisation's new tenders and updates together. Organisations with high-relevance "
-                    "tenders come first. Click a title to open the document.")
-        if len(ordered) > len(shown_orgs):
-            subtitle += f" Showing {len(shown_orgs)} of {len(ordered)} organisations; the rest are in the attached Excel."
-        rows.append(_section("New by organisation", subtitle))
-        for org, items in shown_orgs:
-            items.sort(key=lambda r: (not r["tender"], rank.get(r["relevance"], 3),
-                                      (r["last_date"] or date.max).toordinal()))
-            n_t = sum(r["tender"] for r in items)
-            n_u = len(items) - n_t
-            counts = " · ".join(x for x in (
-                f"{n_t} tender{'s' if n_t != 1 else ''}" if n_t else "",
-                f"{n_u} update{'s' if n_u != 1 else ''}" if n_u else "") if x)
-            name = items[0].get("org_name") or org
-            rows.append(f"<tr><td style='padding:18px 28px 8px 28px'><div style='font-size:15px;font-weight:700;"
-                        f"color:{INK}'>{esc(org)} <span style='font-weight:400;color:{MUTED};font-size:13px'>"
-                        f"&nbsp;{esc(name if name != org else '')}{' &#183; ' if name != org else ''}{esc(counts)}"
-                        f"</span></div></td></tr>")
-            shown = items[:10]
-            rows.append(_table(headers, [item_row(r) for r in shown], widths))
-            if len(items) > len(shown):
-                rows.append(f"<tr><td style='padding:6px 28px 0 28px;font-size:12px;color:{MUTED}'>"
-                            f"+ {len(items) - len(shown)} more from {esc(org)} in the attached Excel.</td></tr>")
-
-    if low or already_closed:
-        bits = []
-        if low:
-            bits.append(f"<b>{len(low)}</b> new tender{'s' if len(low) != 1 else ''} with low or no relevance")
-        if already_closed:
-            bits.append(f"<b>{len(already_closed)}</b> with a last date already passed")
-        rows.append(f"<tr><td style='padding:16px 28px 0 28px'><div style='background:#F8FAFC;border:1px solid "
-                    f"{BORDER};border-radius:12px;padding:12px 16px;font-size:13px;color:{MUTED}'>&#9898; "
-                    f"{' and '.join(bits)}: not listed here, all of them are in the attached Excel.</div></td></tr>")
-
-    notes = []
-    if problems:
-        notes.append("<b>Websites that could not be read:</b><br>" + "<br>".join(esc(p) for p in problems[:10]))
+    # Failed websites are already shown in their category; the notes keep the rest (e.g. Claude logged out).
+    notes = [esc(p) for p in problems if not (report.get("site_status") and "website could not be read" in p)]
     if ai_summary and ai_summary.get("skipped_reason"):
         notes.append(f"<b>AI note:</b> {esc(ai_summary['skipped_reason'])}")
     if report.get("locked"):
         notes.append("<b>Excel files were open during the update</b>; their new rows will be added in the next run.")
     if notes:
-        rows.append(_section("Notes"))
-        rows.append(f"<tr><td style='padding:0 24px;font-size:13px;color:#1F2937'>{'<br><br>'.join(notes)}</td></tr>")
+        o.append(f"<div style='margin-top:22px;font-size:16px;font-weight:800;color:{INK}'>Notes</div>"
+                 f"<div style='font-size:13px;color:#1F2937;margin-top:6px;line-height:1.5'>{'<br>'.join(notes)}</div>")
 
-    attachment = (f"Today's new items: attached <b>{esc(Path(report['daily']).name)}</b>. "
-                  if report.get("daily") else "")
-    rows.append(
-        f"<tr><td style='padding:24px 28px 28px 28px;font-size:12px;line-height:1.6;color:{MUTED}'>"
-        f"{attachment}Full history: attached <b>{esc(Path(report['master']).name)}</b> (on the laptop: "
-        f"{esc(report['master'])}, one folder per organisation with its Excel and documents).<br><b>Uploaded on</b> = the date the file was put on the website (from the website's media "
-        f"library, the file name or the web server); &#8212; means the website does not show it.<br>"
-        f"Relevance is judged by AI against your company profile. Always check the original "
-        f"document before applying.</td></tr>")
+    attachment = f"Today's new items: attached <b>{esc(Path(report['daily']).name)}</b>. " if report.get("daily") else ""
+    o.append(f"<div style='margin-top:28px;padding-top:14px;border-top:1px solid {BORDER};font-size:12px;color:{MUTED};"
+             f"line-height:1.6'>{attachment}Full history: attached <b>{esc(Path(report['master']).name)}</b> (on the laptop: "
+             f"{esc(report['master'])}).<br><b>Uploaded</b> = the date the file was put on the website; &#8212; means the "
+             "website does not show it. <b>Pages changed</b> = the page text changed but no new document was found on it.<br>"
+             "Relevance is judged by AI against your company profile. Always check the original document before applying."
+             "</div></td></tr>")
 
-    body = (
-        f"<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
-        f"</head><body style='margin:0;padding:0;background:{PAGE}'>"
-        f"<table width='100%' cellpadding='0' cellspacing='0' style='background:{PAGE};padding:12px 0'>"
-        "<tr><td align='center'>"
-        "<table width='100%' cellpadding='0' cellspacing='0' style='max-width:1200px;width:100%;background:#FFFFFF;"
-        "font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;border:1px solid #E2E8F0;border-radius:16px;"
-        "overflow:hidden'>"
-        + "".join(rows)
-        + "</table></td></tr></table></body></html>"
-    )
+    body = (f"<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'></head>"
+            f"<body style='margin:0;padding:0;background:{PAGE}'><table width='100%' cellpadding='0' cellspacing='0' "
+            f"style='background:{PAGE};padding:12px 0'><tr><td align='center'><table width='100%' cellpadding='0' "
+            f"cellspacing='0' style='max-width:1100px;width:100%;background:#FFFFFF;font-family:Segoe UI,Roboto,Arial,"
+            f"sans-serif;font-size:13px;color:{INK};border:1px solid {BORDER};border-radius:16px;overflow:hidden'>{''.join(o)}</table></td></tr>"
+            "</table></body></html>")
     return subject, body
