@@ -64,7 +64,7 @@ def _anchor_text(tag: Tag) -> str:
     return text
 
 
-def _context(tag: Tag, limit: int = 400) -> str:
+def _context(tag: Tag, limit: int = 600) -> str:
     """Text of the closest enclosing block (list item, table row, card) that is still short."""
     best = _squash(tag.get_text(" ", strip=True))
     node = tag
@@ -72,7 +72,9 @@ def _context(tag: Tag, limit: int = 400) -> str:
         node = node.parent
         if node is None or node.name in ("body", "html", "[document]"):
             break
-        if node.name not in ("tr", "li"):
+        # A table cell belongs to its row even when it also links the tender's corrigenda; the row holds the date
+        # ("EoI ... | CORRIGENDUM-I / Date Extension Corrigendum | Dec 12, 2022").
+        if node.name not in ("tr", "li") and not (node.name == "td" and node.find_parent("tr") is not None):
             # A block holding several different links is a list of items, not this item's own text.
             hrefs = {a.get("href") for a in node.find_all("a", href=True, limit=6)}
             if len(hrefs) > 1:

@@ -253,7 +253,7 @@ class SiteScanner:
             return None
         self.fetched.add(key)
         if self.use_js:
-            return self._render(url)
+            return self._render(url, text, source)
         resp = self.fetcher.get(url, textual_only=True)
         if resp.not_textual:
             self._add_doc_from_response(url, resp, text, source)
@@ -267,7 +267,7 @@ class SiteScanner:
             log.info("[%s] blocked (HTTP %s) at %s - switching to browser", self.site.code, resp.status, url)
             self.use_js = True
             self.scan.method = "browser (site blocked plain requests)"
-            return self._render(url)
+            return self._render(url, text, source)
         if resp.status != 200:
             if resp.status in (404, 410) and not is_home:
                 self.dead_links += 1
@@ -281,13 +281,13 @@ class SiteScanner:
                          self.site.code, anchors, len(html))
                 self.use_js = True
                 self.scan.method = "browser (auto)"
-                rendered = self._render(url)
+                rendered = self._render(url, text, source)
                 if rendered is not None:
                     return rendered
         self.scan.pages += 1
         return resp.final_url, html
 
-    def _render(self, url: str):
+    def _render(self, url: str, text: str = "", source: str = ""):
         if self.renderer is None:
             self.renderer = Renderer(ignore_https_errors=not self.fetcher.verify)
         self.fetcher._wait()
@@ -295,6 +295,10 @@ class SiteScanner:
         self.scan.rendered += 1
         if result.error or result.status != 200 or not result.html.strip() or Response(
                 url, result.final_url, result.status, content=result.html.encode("utf-8")).looks_blocked:
+            if result.error and "Download is starting" in result.error:
+                # The address serves a file (C-DAC: index.aspx?id=pdf_...): a document, not a broken page.
+                self._add_item(url, text, "", source or url, "page", True, True)
+                return None
             self._note_timeout(result.error)
             if result.status in (404, 410) and url != self.site.url:
                 self.dead_links += 1

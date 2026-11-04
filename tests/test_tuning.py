@@ -193,3 +193,27 @@ def test_undated_old_links_are_not_new():
                                       "https://www.coa.gov.in/"), today, {54}, entry)
     assert not _looks_old_undated(row("EOI for assessment agencies 2026-27", "https://coa.gov.in/f?id=3", 55,
                                       "https://coa.gov.in/notices"), today, {54}, entry)
+
+
+def test_a_table_row_with_corrigendum_links_keeps_its_date():
+    """C-DAC lists an EoI with its corrigenda in one cell and the date in the next cell of the same row."""
+    from datetime import date
+    from tender_tracker.dates import listing_dates
+    from tender_tracker.discover.extract import parse_html
+    html = """<table><tr>
+      <td><a href="/index.aspx?id=ev_EoIFforEmpanelmentCDACH"><strong>Expression of Interest (EoI) for Empanelment
+        of Spokes for FutureSkills PRIME Upskilling Programmes on Emerging Technologies</strong></a><br/>
+        <a href="/index.aspx?id=pdf_Corrigendum_PreBidWebex">CORRIGENDUM-I</a>
+        <small>(File Format: .pdf, File Size: 355 KB, Updated on: 19/12/2022)</small> /
+        <a href="/index.aspx?id=pdf_Corrigendum_Responses_EoI">CORRIGENDUM RESPONSES</a>
+        <small>(File Format: .pdf, File Size: 425 KB, Updated on: 22/12/2022)</small><br/>
+        <a href="/index.aspx?id=pdf_Corrigendum_DateExt">Date Extension Corrigendum</a>
+        <small>(File Format: .pdf, File Size: 125 KB, Updated on: 27/12/2022)</small></td>
+      <td>Dec 12, 2022</td></tr>
+      <tr><td><a href="/index.aspx?id=lu_EOI-NSM"><strong>EoI: Usage of HPC Facilities under NSM</strong></a></td>
+      <td>Oct 10, 2022</td></tr></table>"""
+    links = {l.url.split("id=")[1]: l for l in parse_html(html, "https://www.cdac.in/index.aspx?id=tenders_eoi").links}
+    eoi = links["ev_EoIFforEmpanelmentCDACH"].context
+    assert "Dec 12, 2022" in eoi and "Oct 10, 2022" not in eoi
+    published, _ = listing_dates(eoi, date(2026, 11, 4))
+    assert published is not None and published.year == 2022
