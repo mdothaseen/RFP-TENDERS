@@ -45,7 +45,7 @@ documents:
   # Which categories are downloaded (vague-named files are always downloaded to read them).
   download_categories: [Tender, RFP, EOI, Empanelment, Corrigendum, Notice, Recruitment]
   # Only download files from the last N days (older files stay as links only).
-  baseline_days: 365
+  baseline_days: 30
   max_per_run: 60            # priority tender/notice documents first
   unknown_per_run: 10        # small discovery batch: ambiguous files can hide tenders
   deep_max_per_run: 300      # --deep / Sunday can drain more of the old backlog

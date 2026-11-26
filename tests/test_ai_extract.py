@@ -87,5 +87,11 @@ def test_closed_and_old_tenders_leave_the_queue(tmp_path):
         assert (row["ai_status"] == "pending") is stays, key
         assert stays or row["ai_error"].startswith(ai_extract.STALE)
     planned = {r["id"] for r in documents.plan_documents(store, settings, kw, today).rows}
-    assert planned == {ids[k] for k, (*_, stays) in cases.items() if stays}
+    # Downloads honour documents.baseline_days: an old-but-open tender stays in the AI queue but is
+    # not re-downloaded once its published date is outside the window (undated links still qualify).
+    from datetime import timedelta
+    window = (today - timedelta(days=int(settings.documents.get("baseline_days", 365)))).isoformat()
+    expect = {ids[k] for k, (_, published, _, stays) in cases.items()
+              if stays and (published is None or published.isoformat() >= window)}
+    assert planned == expect
     assert ai_extract.retire_stale(store, settings, today) == 0
