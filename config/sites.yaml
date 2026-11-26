@@ -1041,3 +1041,159 @@ sites:
     url: https://www.petrolpumpdealerchayan.in/
     js: true
     seeds: []
+
+  # --- State Skill Development Missions (added 2026-11-27) ---
+
+  - code: APSSDC
+    name: "Andhra Pradesh State Skill Development Corporation (APSSDC)"
+    tier: Focused
+    url: https://naipunyam.ap.gov.in/
+    js: true
+    seeds: []
+
+  - code: ASDM
+    name: "Assam Skill Development Mission (ASDM)"
+    tier: Focused
+    url: https://asdm.assam.gov.in/
+    seeds: []
+
+  - code: BSDM
+    name: "Bihar Skill Development Mission (BSDM)"
+    tier: Focused
+    url: https://www.biharskilldevelopmentmission.in/
+    js: true
+    seeds: []
+
+  - code: CSSDA
+    name: "Chhattisgarh State Skill Development Authority (CSSDA)"
+    tier: Focused
+    url: https://cssda.cg.nic.in/
+    seeds: []
+
+  - code: DSDEGOA
+    name: "Directorate of Skill Development & Entrepreneurship, Goa"
+    tier: Focused
+    url: https://dsde.goa.gov.in/
+    seeds: []
+
+  - code: GSDM
+    name: "Gujarat Skill Development Mission (GSDM)"
+    tier: Focused
+    url: https://skills.gujarat.gov.in/
+    seeds: []
+
+  - code: HSDM
+    name: "Haryana Skill Development Mission (HSDM)"
+    tier: Focused
+    url: https://hsdm.org.in/
+    seeds: []
+
+  - code: JKSDM
+    name: "Jammu & Kashmir Skill Development Mission (JKSDM)"
+    tier: Focused
+    url: https://skill.jk.gov.in/cms/
+    seeds: []
+
+  - code: JSDMS
+    name: "Jharkhand Skill Development Mission Society (JSDMS)"
+    tier: Focused
+    url: https://jsdm.jharkhand.gov.in/jsdm/cms/en/
+    seeds: []
+
+  - code: KASE
+    name: "Kerala Academy for Skills Excellence (KASE)"
+    tier: Focused
+    url: https://kase.in/
+    seeds: []
+
+  - code: MPSDM
+    name: "Madhya Pradesh Skill Development Mission (MPSDM)"
+    tier: Focused
+    url: https://www.mpskills.gov.in/
+    seeds: []
+
+  - code: MSSDS
+    name: "Maharashtra State Skill Development Society (MSSDS)"
+    tier: Focused
+    url: https://mssds.in/
+    js: true
+    seeds: []
+
+  - code: MSSDSK
+    name: "Maharashtra State Skill Development Society - Kaushalya portal"
+    tier: Focused
+    url: https://kaushalya.mahaswayam.gov.in/
+    seeds: []
+
+  - code: LESDEMZ
+    name: "Labour, Employment, Skill Development & Entrepreneurship Department, Mizoram"
+    tier: Focused
+    url: https://lesde.mizoram.gov.in/
+    seeds: []
+
+  - code: NSEDM
+    name: "Nagaland Skill & Entrepreneurship Development Mission (NSEDM)"
+    tier: Focused
+    url: https://nsedm.nagaland.gov.in/
+    seeds: []
+
+  - code: SDTEOD
+    name: "Skill Development & Technical Education Department, Odisha"
+    tier: Focused
+    url: https://sdte.odisha.gov.in/
+    seeds: []
+
+  - code: RSLDC
+    name: "Rajasthan Skill and Livelihoods (Sectoral Portal)"
+    tier: Focused
+    url: https://livelihoods.rajasthan.gov.in/
+    js: true
+    seeds: []
+
+  - code: TASK
+    name: "Telangana Academy for Skill and Knowledge (TASK)"
+    tier: Focused
+    url: https://task.telangana.gov.in/
+    seeds: []
+
+  - code: SDDTR
+    name: "Skill Development Department, Tripura"
+    tier: Focused
+    url: https://skill.tripura.gov.in/
+    seeds: []
+
+  - code: UKSDS
+    name: "Uttarakhand Skill Development Society (UKSDS)"
+    tier: Focused
+    url: https://uksds.uk.gov.in/
+    seeds: []
+
+  - code: DSDEUK
+    name: "Department of Skill Development & Employment, Uttarakhand"
+    tier: Focused
+    url: https://dsde.uk.gov.in/
+    seeds: []
+
+  - code: PBSSD
+    name: "Paschim Banga Society for Skill Development (PBSSD)"
+    tier: Focused
+    url: https://pbssd.gov.in/
+    seeds: []
+
+  - code: MSSDMN
+    name: "Manipur Society for Skill Development (MSSD)"
+    tier: Focused
+    url: https://manipurskills.mn.gov.in/
+    seeds: []
+
+  - code: SDEAR
+    name: "Department of Skill Development & Entrepreneurship, Arunachal Pradesh"
+    tier: Focused
+    url: https://skillarunachal.nic.in/
+    seeds: []
+
+  - code: OSDA
+    name: "Odisha Skill Development Authority (OSDA)"
+    tier: Focused
+    url: https://skillodisha.gov.in/
+    seeds: []

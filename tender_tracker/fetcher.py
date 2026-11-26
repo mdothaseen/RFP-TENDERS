@@ -99,6 +99,19 @@ class Robots:
             return []
 
 
+class _LegacyTLSAdapter(HTTPAdapter):
+    """HTTPS for old servers that need legacy renegotiation (OpenSSL 3 refuses it by default). Unverified."""
+
+    def init_poolmanager(self, *args, **kwargs):
+        import ssl
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        ctx.options |= getattr(ssl, "OP_LEGACY_SERVER_CONNECT", 0x4)
+        kwargs["ssl_context"] = ctx
+        return super().init_poolmanager(*args, **kwargs)
+
+
 class Fetcher:
     def __init__(self, site: Site, settings: Settings):
         self.site = site
@@ -139,7 +152,18 @@ class Fetcher:
                 url, headers=headers, timeout=(15, timeout or self.timeout), verify=self.verify,
                 stream=True, allow_redirects=True,
             )
-        except requests.exceptions.SSLError:
+        except requests.exceptions.SSLError as exc:
+            if "LEGACY_RENEGOTIATION" in str(exc) and not getattr(self, "_legacy", False):
+                # Old government servers (e.g. pbssd.gov.in) need legacy TLS renegotiation, which OpenSSL 3 refuses.
+                log.info("[%s] old TLS server, retrying with legacy renegotiation allowed", self.site.code)
+                self._legacy = True
+                self.verify = False
+                self.ssl_fallback_used = True
+                self.session.mount("https://", _LegacyTLSAdapter(max_retries=self.session.get_adapter("https://").max_retries,
+                                                                 pool_connections=4, pool_maxsize=4))
+                self._wait()
+                return self.session.get(url, headers=headers, timeout=(15, timeout or self.timeout), verify=False,
+                                        stream=True, allow_redirects=True)
             if not self.verify:
                 raise
             log.info("[%s] SSL certificate problem, retrying without verification", self.site.code)
