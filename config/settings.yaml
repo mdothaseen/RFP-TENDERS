@@ -83,6 +83,8 @@ notify:
   # true  = also a separate email for every new item, page change and deadline reminder.
   separate_emails: false
   when_empty: false
+  # true = a scan that found nothing new sends no email (for non-stop scanning: setup_scheduler.ps1 -Auto).
+  only_when_new: true
   instant_categories: [Tender, RFP, EOI, Empanelment, Corrigendum, Notice]
   instant_relevance: [High, Medium, ""] # unassessed items stay visible; Low goes into daily digest
   reminder_days: [7, 3, 1]

@@ -157,6 +157,10 @@ def queue_run_digest(store, report: dict, run, settings, sites, today, problems:
                           len(sites))
     if not (report["new"] or report["closing"] or settings.notify.get("when_empty", False)):
         return False
+    # Non-stop scanning (setup_scheduler.ps1 -Auto): a scan that found nothing new sends no email,
+    # otherwise the same closing-soon list would arrive every two hours.
+    if settings.notify.get("only_when_new", False) and not report["new"]:
+        return False
     attach = report.get("daily")
     payload = {"subject": digest.subject, "text": digest.text, "html": digest.html,
                "attachments": [str(attach)] if attach and Path(str(attach)).exists() else []}

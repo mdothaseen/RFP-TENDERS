@@ -3,6 +3,7 @@ Sets up the SSC Tender Tracker on this Windows laptop.
 
   Setup:   powershell -ExecutionPolicy Bypass -File setup_scheduler.ps1                  (asks every hour, 09:00-21:00)
            powershell -ExecutionPolicy Bypass -File setup_scheduler.ps1 -From 10:00 -Hours 8
+  Non-stop: powershell -ExecutionPolicy Bypass -File setup_scheduler.ps1 -Auto   (no popup, scans 24x7, email when new)
   Remove:  powershell -ExecutionPolicy Bypass -File setup_scheduler.ps1 -Remove
 
 What it does:
@@ -14,7 +15,8 @@ What it does:
 param(
     [string]$From = "09:00",
     [int]$Hours = 12,
-    [switch]$Remove
+    [switch]$Remove,
+    [switch]$Auto
 )
 
 $TaskName = "SSC Tender Tracker"
@@ -44,8 +46,26 @@ Set-ItemProperty -Path $ProtocolKey -Name "(default)" -Value "URL:SSC Tender Tra
 Set-ItemProperty -Path $ProtocolKey -Name "URL Protocol" -Value ""
 Set-ItemProperty -Path "$ProtocolKey\shell\open\command" -Name "(default)" -Value "`"$Pythonw`" `"$Click`" `"%1`""
 
-# 2. Hourly question.
 $user = "$env:USERDOMAIN\$env:USERNAME"
+
+if ($Auto) {
+    # Non-stop: no popup. The task fires every 15 minutes; while a scan runs (about 2 hours) the next
+    # start is skipped, so a new scan begins soon after the previous one ends. Email only when something is new.
+    $bat = Join-Path $Root "run_daily.bat"
+    $action = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"`"$bat`" --force`"" -WorkingDirectory $Root
+    $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 15)
+    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable `
+        -WakeToRun -ExecutionTimeLimit (New-TimeSpan -Hours 5) -MultipleInstances IgnoreNew
+    $principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited
+    Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings `
+        -Principal $principal -Force `
+        -Description "Scans SSC, NSDC and NCVET websites non-stop; emails when something new is found." | Out-Null
+    Write-Host "Ready: non-stop scanning. First scan starts in about 1 minute; each new scan starts when the last one ends."
+    Write-Host "Progress: logs\run_<date>.log   Stop: setup_scheduler.ps1 -Remove"
+    exit 0
+}
+
+# 2. Hourly question.
 $action = New-ScheduledTaskAction -Execute $Pythonw -Argument "-m tender_tracker --ask" -WorkingDirectory $Root
 $trigger = New-ScheduledTaskTrigger -Daily -At $From
 $repeat = New-ScheduledTaskTrigger -Once -At $From -RepetitionInterval (New-TimeSpan -Hours 1) `
