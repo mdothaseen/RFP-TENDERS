@@ -19,7 +19,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from .ai_extract import STALE
-from .discover.nic_portal import is_portal_tender
+from .discover.nic_portal import detail_file, is_portal_tender
 from .classify import classify, content_category, is_vague
 from .config import DATA_DIR, ROOT, TEXT_DIR, Keywords, Settings, Site, site_dir
 from .dates import parse_http_date
@@ -336,6 +336,16 @@ def process_item(fetcher: Fetcher, row, settings: Settings, keywords: Keywords, 
     TEXT_DIR.mkdir(parents=True, exist_ok=True)
     text_path = TEXT_DIR / f"{row['id']}_r{dict(row).get('revision', 0)}.txt"
 
+    if is_portal_tender(row["url"]):
+        # e-procurement tender: its detail page was saved during the scan (the portal link has expired since)
+        saved = detail_file(row["url"])
+        if not saved.exists():
+            return {"doc_status": "error", "doc_attempts": attempts, "doc_error": "portal detail page not saved"}
+        text = saved.read_text(encoding="utf-8")[:max_chars]
+        text_path.write_text(text, encoding="utf-8")
+        return {"doc_status": "html", "doc_attempts": attempts, "doc_error": None, "text_path": rel(text_path),
+                "text_chars": len(text), "scanned": 0}
+
     if not row["is_document"]:
         html = render(row["url"]) if render is not None else None
         if not html:
@@ -509,8 +519,6 @@ def plan_documents(store, settings: Settings, keywords: Keywords, today: date, d
         if not recent:
             continue
         if (row["ai_error"] or "").startswith(STALE) or row["duplicate_of"]:  # closed / old / a second copy
-            continue
-        if is_portal_tender(row["url"]):  # e-procurement tender: details come from the portal table
             continue
         category = row["content_category"] or row["category"]
         if row["is_document"]:

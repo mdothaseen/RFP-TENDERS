@@ -5,7 +5,9 @@ with live tenders (no CAPTCHA); the departments whose names match `nic_orgs` are
 and their tender tables are read. A whole portal is never crawled (thousands of road and building works).
 
 The portal's links carry a session token, so they stop working later. Each tender is therefore saved under
-its Tender ID (e.g. 2026_DTEDM_1357824_1) with the department page as its link.
+its Tender ID (e.g. 2026_DTEDM_1357824_1) with the department page as its link. The tender's detail page
+(value, EMD, fee, dates, work description) is read once in the same session and kept in data/nic/<id>.txt;
+the documents step hands that text to the AI. The PDFs themselves sit behind a CAPTCHA and are not fetched.
 """
 
 from __future__ import annotations
@@ -14,9 +16,14 @@ import html as htmllib
 import logging
 import re
 from datetime import date, datetime
+from pathlib import Path
 from urllib.parse import urljoin
 
+from ..config import DATA_DIR
+
 log = logging.getLogger(__name__)
+
+DETAIL_DIR = DATA_DIR / "nic"
 
 ORG_PAGE = "?page=FrontEndTendersByOrganisation&service=page"
 MARK = "#nic-tender="           # url fragment that marks a portal tender (no document to download)
@@ -33,6 +40,19 @@ _NEXT = re.compile(r"<a[^>]+id=\"linkFwd\"[^>]+href=\"([^\"]+)\"|<a[^>]+href=\"(
 
 def is_portal_tender(url: str | None) -> bool:
     return MARK in (url or "")
+
+
+def detail_file(url_or_id: str) -> Path:
+    tid = url_or_id.split(MARK)[-1]
+    return DETAIL_DIR / f"{re.sub(r'[^A-Za-z0-9_]', '_', tid)}.txt"
+
+
+def detail_text(page: str) -> str:
+    """Readable text of a tender's detail page (scripts, menus and the page frame removed)."""
+    page = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", page, flags=re.S | re.I)
+    text = " ".join(htmllib.unescape(_TAG.sub(" ", page)).split())
+    start = text.find("Basic Details")
+    return text[start:] if start >= 0 else text
 
 
 def _text(cell: str) -> str:
@@ -63,9 +83,9 @@ def parse_org_list(page: str, patterns: list[re.Pattern]) -> list[tuple[str, str
 
 
 def parse_tenders(page: str) -> list[dict]:
-    """Rows of a department's tender table: published, closing, title, reference, tender id."""
+    """Rows of a department's tender table: published, closing, title, reference, tender id, detail link."""
     out = []
-    for cells, _ in _rows(page):
+    for cells, links in _rows(page):
         if len(cells) < 5:
             continue
         # "[title] [reference][tender id]"; the column after it names the department chain.
@@ -76,14 +96,29 @@ def parse_tenders(page: str) -> list[dict]:
         parts = [p.strip() for p in _BRACKETS.findall(block)]
         title = parts[0] if parts else block
         ref = parts[1] if len(parts) > 2 else ""
+        view = next((h for h in links if "FrontEndViewTender" in h), "")
         out.append({"id": tid.group(1), "title": title, "ref": ref,
-                    "published": _when(cells[1]), "closing": _when(cells[2]), "opening": cells[3]})
+                    "published": _when(cells[1]), "closing": _when(cells[2]), "opening": cells[3], "view": view})
     return out
 
 
 def next_page(page: str) -> str | None:
     m = _NEXT.search(page)
     return htmllib.unescape(m.group(1) or m.group(2)) if m else None
+
+
+def _save_detail(fetcher, app: str, tender: dict) -> None:
+    """Keep the detail page of a tender not seen before (the link only works in this session)."""
+    path = detail_file(tender["id"])
+    if path.exists() or not tender.get("view"):
+        return
+    resp = fetcher.get(urljoin(app, tender["view"]), textual_only=True)
+    if resp.error or not resp.status or resp.status >= 400:
+        return
+    text = detail_text(resp.text)
+    if tender["id"] in text:  # the page really is this tender's (not an expired-session page)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
 
 
 def scan_portal(scanner) -> bool:
@@ -110,7 +145,9 @@ def scan_portal(scanner) -> bool:
                 scanner._err(f"{name}: {page.error or 'HTTP ' + str(page.status)}")
                 break
             for t in parse_tenders(page.text):
-                title = t["title"] + (f" (Ref: {t['ref']})" if t["ref"] else "")
+                _save_detail(fetcher, app, t)
+                title = t["title"] + (f" (Ref: {t['ref']}; Tender ID: {t['id']})" if t["ref"]
+                                      else f" (Tender ID: {t['id']})")
                 context = (f"e-Tender on {site.name} | Department: {name} | Tender ID: {t['id']} | "
                            f"Closing: {t['closing'] or ''} | Bid opening: {t['opening']}")
                 found = scanner._add_item(org_url + MARK + t["id"], title, context, org_url, "nic-portal",

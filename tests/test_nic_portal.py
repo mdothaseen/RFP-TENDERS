@@ -33,7 +33,7 @@ def test_tender_rows_give_title_reference_dates_and_id():
     rows = nic_portal.parse_tenders(TENDERS)
     assert rows[0] == {"id": "2026_SDED_1357824_1", "title": "Selection of Assessment Agency for PMKVY",
                        "ref": "SDED/RFP/2026/12", "published": date(2026, 11, 21), "closing": date(2026, 12, 4),
-                       "opening": "07-Dec-2026 11:00 AM"}
+                       "opening": "07-Dec-2026 11:00 AM", "view": ""}
     assert rows[1]["title"] == "Housekeeping Services" and rows[1]["ref"] == ""
     assert nic_portal.next_page(TENDERS) == "/nicgep/app?component=next&sp=P2"
 
@@ -41,3 +41,24 @@ def test_tender_rows_give_title_reference_dates_and_id():
 def test_portal_tenders_are_not_downloaded():
     assert nic_portal.is_portal_tender("https://x.gov.in/nicgep/app?page=FrontEndTendersByOrganisation#nic-tender=1")
     assert not nic_portal.is_portal_tender("https://x.gov.in/tender.pdf")
+
+
+def test_detail_page_text_is_kept_for_the_ai(tmp_path, monkeypatch):
+    from tender_tracker import documents
+    monkeypatch.setattr(nic_portal, "DETAIL_DIR", tmp_path / "nic")
+    monkeypatch.setattr(documents, "TEXT_DIR", tmp_path / "text")
+    page = ("<html><script>var x=1;</script><div>Menu</div><b>Basic Details</b> Tender ID 2026_SDED_1_1 "
+            "EMD Amount in &#8377; 40,00,000 Work Description Assessment of trainees</html>")
+
+    class F:
+        def get(self, url, textual_only=False):
+            return type("R", (), {"error": None, "status": 200, "text": page})()
+
+    nic_portal._save_detail(F(), "https://x.gov.in/nicgep/app", {"id": "2026_SDED_1_1", "view": "/v"})
+    saved = nic_portal.detail_file("2026_SDED_1_1").read_text(encoding="utf-8")
+    assert saved.startswith("Basic Details") and "40,00,000" in saved and "var x" not in saved
+
+    row = {"id": 7, "revision": 0, "doc_attempts": 0, "is_document": 0,
+           "url": "https://x.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page#nic-tender=2026_SDED_1_1"}
+    fields = documents.process_item(None, row, type("S", (), {"documents": {}, "ai": {}})(), None)
+    assert fields["doc_status"] == "html" and fields["text_chars"] == len(saved)
