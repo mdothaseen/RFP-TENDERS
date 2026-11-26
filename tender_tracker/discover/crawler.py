@@ -154,11 +154,16 @@ class SiteScanner:
         try:
             if self.settings.crawl.get("respect_robots", True):
                 self.robots = self.fetcher.robots()
-            self._enqueue(self.site.url, 0, -1, seed=True)
-            for seed in self.site.seeds:
-                self._enqueue(seed, 1, 0, seed=True)
-            home_ok = self._crawl()
-            if not self.light:
+            if self.site.nic_orgs:
+                # State e-procurement portal: only the chosen departments' tender tables, never a full crawl.
+                from .nic_portal import scan_portal
+                home_ok = scan_portal(self)
+            else:
+                self._enqueue(self.site.url, 0, -1, seed=True)
+                for seed in self.site.seeds:
+                    self._enqueue(seed, 1, 0, seed=True)
+                home_ok = self._crawl()
+            if not self.light and not self.site.nic_orgs:
                 self._step("sitemaps", self._sitemaps)
                 self._step("wordpress", self._wordpress)
         except Exception as exc:  # noqa: BLE001 - one site must never stop the others

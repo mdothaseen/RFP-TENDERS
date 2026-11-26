@@ -19,6 +19,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from .ai_extract import STALE
+from .discover.nic_portal import is_portal_tender
 from .classify import classify, content_category, is_vague
 from .config import DATA_DIR, ROOT, TEXT_DIR, Keywords, Settings, Site, site_dir
 from .dates import parse_http_date
@@ -508,6 +509,8 @@ def plan_documents(store, settings: Settings, keywords: Keywords, today: date, d
         if not recent:
             continue
         if (row["ai_error"] or "").startswith(STALE) or row["duplicate_of"]:  # closed / old / a second copy
+            continue
+        if is_portal_tender(row["url"]):  # e-procurement tender: details come from the portal table
             continue
         category = row["content_category"] or row["category"]
         if row["is_document"]:

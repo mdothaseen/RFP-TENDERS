@@ -10,8 +10,22 @@
 # extra_hosts  other hostnames whose documents belong to this site
 # exclude      URL substrings the crawler should skip
 # tier         Focused / Regular / Low: order and amount of detail in the summary email (all sites are scanned)
+# nic_orgs     state e-procurement portal (NIC GePNIC): read only the departments whose names match these
+#              patterns ("default" = the list below). The portal itself is never crawled.
 #
 # To add a new organisation, copy one block and change the values.
+
+# Departments read on every e-procurement portal (nic_orgs: default). Road and building works are left out.
+nic_orgs_default:
+  - 'skill|kaushal'
+  - '\blabou?r\b'
+  - 'employment'
+  - 'technical education'
+  - 'vocational'
+  - 'livelihood'
+  - '\bITI\b|industrial training'
+  - 'apprentice'
+  - 'entrepreneur'
 
 sites:
   - code: BWSSC
@@ -1196,4 +1210,167 @@ sites:
     name: "Odisha Skill Development Authority (OSDA)"
     tier: Focused
     url: https://skillodisha.gov.in/
+    seeds: []
+
+  # --- State e-procurement portals: skill / labour / technical education departments only ---
+
+  - code: EPCPPP
+    name: "Central Public Procurement Portal (CPPP) - e-Procurement, Government of India"
+    tier: Focused
+    url: https://eprocure.gov.in/eprocure/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPDL
+    name: "e-Procurement Portal, Government of NCT of Delhi"
+    tier: Focused
+    url: https://govtprocurement.delhi.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPGA
+    name: "e-Procurement Portal, Government of Goa"
+    tier: Focused
+    url: https://eprocure.goa.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPHR
+    name: "e-Procurement Portal, Government of Haryana"
+    tier: Focused
+    url: https://etenders.hry.nic.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPHP
+    name: "e-Procurement Portal, Government of Himachal Pradesh"
+    tier: Focused
+    url: https://hptenders.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPJK
+    name: "e-Procurement Portal, Government of Jammu & Kashmir"
+    tier: Focused
+    url: https://jktenders.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPJH
+    name: "e-Procurement Portal, Government of Jharkhand"
+    tier: Focused
+    url: https://jharkhandtenders.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPKL
+    name: "e-Procurement Portal, Government of Kerala"
+    tier: Focused
+    url: https://etenders.kerala.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPMP
+    name: "e-Procurement Portal, Government of Madhya Pradesh"
+    tier: Focused
+    url: https://mptenders.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPMH
+    name: "e-Procurement Portal, Government of Maharashtra"
+    tier: Focused
+    url: https://mahatenders.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPMZ
+    name: "e-Procurement Portal, Government of Mizoram"
+    tier: Focused
+    url: https://mizoramtenders.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPOD
+    name: "e-Procurement Portal, Government of Odisha"
+    tier: Focused
+    url: https://tendersodisha.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPPB
+    name: "e-Procurement Portal, Government of Punjab"
+    tier: Focused
+    url: https://eproc.punjab.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPRJ
+    name: "e-Procurement Portal, Government of Rajasthan"
+    tier: Focused
+    url: https://eproc.rajasthan.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPSK
+    name: "e-Procurement Portal, Government of Sikkim"
+    tier: Focused
+    url: https://sikkimtender.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPTN
+    name: "e-Procurement Portal, Government of Tamil Nadu"
+    tier: Focused
+    url: https://tntenders.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPTR
+    name: "e-Procurement Portal, Government of Tripura"
+    tier: Focused
+    url: https://tripuratenders.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPUP
+    name: "e-Procurement Portal, Government of Uttar Pradesh"
+    tier: Focused
+    url: https://etender.up.nic.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPUK
+    name: "e-Procurement Portal, Government of Uttarakhand"
+    tier: Focused
+    url: https://uktenders.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPWB
+    name: "e-Procurement Portal, Government of West Bengal"
+    tier: Focused
+    url: https://wbtenders.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPCH
+    name: "e-Procurement Portal, Chandigarh UT Administration"
+    tier: Focused
+    url: https://etenders.chd.nic.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPPY
+    name: "e-Procurement Portal, Government of Puducherry"
+    tier: Focused
+    url: https://pudutenders.gov.in/nicgep/app
+    nic_orgs: default
+    seeds: []
+
+  - code: EPLA
+    name: "e-Procurement Portal, Union Territory of Ladakh"
+    tier: Focused
+    url: https://tenders.ladakh.gov.in/nicgep/app
+    nic_orgs: default
     seeds: []

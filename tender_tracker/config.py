@@ -55,6 +55,7 @@ class Site:
     keep_fragments: bool = False
     notes: str = ""
     tier: str = "Regular"          # Focused / Regular / Low: order and depth in the summary email
+    nic_orgs: list[str] = field(default_factory=list)  # NIC e-procurement portal: departments to read (regex)
 
     @property
     def host(self) -> str:
@@ -122,6 +123,17 @@ def _tier(value) -> str:
     return text or "Regular"
 
 
+def _nic_orgs(value, default) -> list[str]:
+    """`nic_orgs: default` uses the shared list at the top of sites.yaml; a list gives this portal's own."""
+    if not value:
+        return []
+    patterns = default if value == "default" else value
+    patterns = [str(p) for p in (patterns or [])]
+    for p in patterns:
+        re.compile(p)  # a typo fails here, not in the middle of a scan
+    return patterns
+
+
 def load_sites() -> list[Site]:
     data = _read_yaml("sites.yaml")
     sites = []
@@ -135,9 +147,11 @@ def load_sites() -> list[Site]:
             ssl_verify=bool(raw.get("ssl_verify", True)),
             extra_hosts=[str(h).lower() for h in raw.get("extra_hosts") or []],
             exclude=[str(e) for e in raw.get("exclude") or []],
-            keep_fragments=bool(raw.get("keep_fragments", False)),
+            # Portal tenders are told apart by a "#nic-tender=<id>" fragment, so fragments are kept there.
+            keep_fragments=bool(raw.get("keep_fragments", False) or raw.get("nic_orgs")),
             notes=str(raw.get("notes") or ""),
             tier=_tier(raw.get("tier")),
+            nic_orgs=_nic_orgs(raw.get("nic_orgs"), data.get("nic_orgs_default")),
         ))
     codes = [s.code for s in sites]
     duplicates = {c for c in codes if codes.count(c) > 1}
