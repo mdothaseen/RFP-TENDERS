@@ -50,7 +50,7 @@ Set-ItemProperty -Path $ProtocolKey -Name "(default)" -Value "URL:SSC Tender Tra
 Set-ItemProperty -Path $ProtocolKey -Name "URL Protocol" -Value ""
 Set-ItemProperty -Path "$ProtocolKey\shell\open\command" -Name "(default)" -Value "`"$Pythonw`" `"$Click`" `"%1`""
 
-$user = "$env:USERDOMAIN\$env:USERNAME"
+$currentUser = "$env:USERDOMAIN\$env:USERNAME"   # not $user: PowerShell names ignore case and $User is the -User parameter
 
 if ($Auto) {
     # No popup: a full scan + email every $EveryHours hours from $From. A start is skipped while a scan still runs.
@@ -72,10 +72,10 @@ if ($Auto) {
             -Description $description | Out-Null
         $who = "$User (also while nobody is signed in)"
     } else {
-        $principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited
+        $principal = New-ScheduledTaskPrincipal -UserId $currentUser -LogonType Interactive -RunLevel Limited
         Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings `
             -Principal $principal -Force -Description $description | Out-Null
-        $who = "$user (only while signed in)"
+        $who = "$currentUser (only while signed in)"
     }
     $times = (0..([math]::Max(1, [int](24 / $EveryHours)) - 1) | ForEach-Object {
         ([datetime]$From).AddHours($_ * $EveryHours).ToString("HH:mm") }) -join ", "
@@ -92,7 +92,7 @@ $repeat = New-ScheduledTaskTrigger -Once -At $From -RepetitionInterval (New-Time
 $trigger.Repetition = $repeat.Repetition
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
     -ExecutionTimeLimit (New-TimeSpan -Minutes 5) -MultipleInstances IgnoreNew
-$principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited
+$principal = New-ScheduledTaskPrincipal -UserId $currentUser -LogonType Interactive -RunLevel Limited
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings `
     -Principal $principal -Force `
     -Description "Every hour asks whether to scan SSC, NSDC and NCVET websites for new tenders." | Out-Null
