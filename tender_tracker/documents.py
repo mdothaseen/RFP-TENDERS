@@ -31,6 +31,8 @@ from .urls import filename_from_url, gdrive_file_id, google_doc_export, host_of,
 log = logging.getLogger(__name__)
 
 _UNSAFE = re.compile(r'[<>:"/\\|?*\x00-\x1f]+')
+# Permanent download failures: retrying these wastes the per-run budget, so they are skipped for good.
+_PERMANENT_ERROR = re.compile(r"HTTP (401|404|410)\b")
 TEXT_KINDS = {"pdf", "docx", "xlsx", "pptx", "zip", "html", "txt", "csv"}
 
 
@@ -390,8 +392,12 @@ def process_item(fetcher: Fetcher, row, settings: Settings, keywords: Keywords, 
         partial = folder / f".download_{row['id']}"
         resp, saved = fetcher.download(url, partial, max_bytes)
         if saved is None:
-            status = "too_big" if resp.error and "larger than" in resp.error else "error"
-            return {"doc_status": status, "doc_attempts": attempts, "doc_error": resp.error}
+            too_big = bool(resp.error and "larger than" in resp.error)
+            # A gone / login-walled / oversized file will not fix itself on retry: skip it for good so
+            # it cannot eat the per-run document budget again. Transient network errors still retry.
+            permanent = too_big or bool(_PERMANENT_ERROR.search(resp.error or ""))
+            return {"doc_status": "too_big" if too_big else "error",
+                    "doc_attempts": 3 if permanent else attempts, "doc_error": resp.error}
         headers = resp.headers
 
         disposition = headers.get("content-disposition", "")
@@ -403,7 +409,7 @@ def process_item(fetcher: Fetcher, row, settings: Settings, keywords: Keywords, 
     if kind == "html":
         # A web page instead of the file: removed document, login page or "not found" page.
         saved.unlink(missing_ok=True)
-        return {"doc_status": "not_file", "doc_attempts": attempts,
+        return {"doc_status": "not_file", "doc_attempts": 3,
                 "doc_error": "link does not open a file (removed from the site, or needs login)"}
     if not reused:
         name = name or (row["title"] or "document")[:90]
