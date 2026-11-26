@@ -3,7 +3,9 @@ Sets up the SSC Tender Tracker on this Windows laptop.
 
   Setup:   powershell -ExecutionPolicy Bypass -File setup_scheduler.ps1                  (asks every hour, 09:00-21:00)
            powershell -ExecutionPolicy Bypass -File setup_scheduler.ps1 -From 10:00 -Hours 8
-  Non-stop: powershell -ExecutionPolicy Bypass -File setup_scheduler.ps1 -Auto   (no popup, scans 24x7, email when new)
+  24x7:    powershell -ExecutionPolicy Bypass -File setup_scheduler.ps1 -Auto -From 08:00 -EveryHours 8 -User tenderbot
+           (no popup: scans at 08:00, 16:00, 00:00 as the user "tenderbot", also while nobody is signed in;
+            asks once for that user's password. Run it in an administrator PowerShell.)
   Remove:  powershell -ExecutionPolicy Bypass -File setup_scheduler.ps1 -Remove
 
 What it does:
@@ -16,7 +18,9 @@ param(
     [string]$From = "09:00",
     [int]$Hours = 12,
     [switch]$Remove,
-    [switch]$Auto
+    [switch]$Auto,
+    [int]$EveryHours = 8,
+    [string]$User = ""
 )
 
 $TaskName = "SSC Tender Tracker"
@@ -49,19 +53,34 @@ Set-ItemProperty -Path "$ProtocolKey\shell\open\command" -Name "(default)" -Valu
 $user = "$env:USERDOMAIN\$env:USERNAME"
 
 if ($Auto) {
-    # Non-stop: no popup. The task fires every 15 minutes; while a scan runs (about 2 hours) the next
-    # start is skipped, so a new scan begins soon after the previous one ends. Email only when something is new.
+    # No popup: a full scan + email every $EveryHours hours from $From. A start is skipped while a scan still runs.
     $bat = Join-Path $Root "run_daily.bat"
     $action = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"`"$bat`" --force`"" -WorkingDirectory $Root
-    $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 15)
+    $trigger = New-ScheduledTaskTrigger -Daily -At $From
+    $repeat = New-ScheduledTaskTrigger -Once -At $From -RepetitionInterval (New-TimeSpan -Hours $EveryHours) `
+        -RepetitionDuration (New-TimeSpan -Hours 24)
+    $trigger.Repetition = $repeat.Repetition
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable `
         -WakeToRun -ExecutionTimeLimit (New-TimeSpan -Hours 5) -MultipleInstances IgnoreNew
-    $principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited
-    Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings `
-        -Principal $principal -Force `
-        -Description "Scans SSC, NSDC and NCVET websites non-stop; emails when something new is found." | Out-Null
-    Write-Host "Ready: non-stop scanning. First scan starts in about 1 minute; each new scan starts when the last one ends."
-    Write-Host "Progress: logs\run_<date>.log   Stop: setup_scheduler.ps1 -Remove"
+    $description = "Scans SSC, NSDC and NCVET websites every $EveryHours hours from $From and emails the summary."
+    if ($User) {
+        # Runs as this account whether or not anyone is signed in; Windows keeps the password, not this script.
+        $cred = Get-Credential -UserName $User -Message "Password of the Windows user $User (used only by Task Scheduler)"
+        if (-not $cred) { Write-Error "No password given."; exit 1 }
+        Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings `
+            -User $cred.UserName -Password $cred.GetNetworkCredential().Password -RunLevel Limited -Force `
+            -Description $description | Out-Null
+        $who = "$User (also while nobody is signed in)"
+    } else {
+        $principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited
+        Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings `
+            -Principal $principal -Force -Description $description | Out-Null
+        $who = "$user (only while signed in)"
+    }
+    $times = (0..([math]::Max(1, [int](24 / $EveryHours)) - 1) | ForEach-Object {
+        ([datetime]$From).AddHours($_ * $EveryHours).ToString("HH:mm") }) -join ", "
+    Write-Host "Ready: scan + email at $times every day, as $who."
+    Write-Host "Progress: logs\run_<date>.log   Remove: setup_scheduler.ps1 -Remove"
     exit 0
 }
 
