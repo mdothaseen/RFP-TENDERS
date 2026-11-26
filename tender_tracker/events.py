@@ -10,7 +10,7 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from .config import env
+from .config import env, env_bool
 from .notify import Digest
 
 log = logging.getLogger(__name__)
@@ -159,7 +159,7 @@ def queue_run_digest(store, report: dict, run, settings, sites, today, problems:
         return False
     # Non-stop scanning (setup_scheduler.ps1 -Auto): a scan that found nothing new sends no email,
     # otherwise the same closing-soon list would arrive every two hours.
-    if settings.notify.get("only_when_new", False) and not report["new"]:
+    if (settings.notify.get("only_when_new", False) or env_bool("EMAIL_ONLY_WHEN_NEW")) and not report["new"]:
         return False
     attach = report.get("daily")
     payload = {"subject": digest.subject, "text": digest.text, "html": digest.html,

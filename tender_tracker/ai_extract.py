@@ -212,7 +212,8 @@ def export_queue(store, settings: Settings, sites: dict, today: date) -> int:
     return len(items)
 
 
-def import_results(store, path: Path, expected: dict[int, int] | None = None) -> tuple[int, list[str]]:
+def import_results(store, path: Path, expected: dict[int, int] | None = None,
+                   model: str = "claude-app") -> tuple[int, list[str]]:
     """Store answers written by the Claude app. Returns (saved, problems)."""
     data = json.loads(path.read_text(encoding="utf-8"))
     if isinstance(data, dict):
@@ -240,7 +241,7 @@ def import_results(store, path: Path, expected: dict[int, int] | None = None) ->
         except (TypeError, ValueError):
             revision = None
         if revision is None or not store.update_item_revision(item_id, revision, ai_status="done", ai_json=info.model_dump_json(),
-                                                             ai_model="claude-app", ai_at=now, ai_error=None):
+                                                             ai_model=model, ai_at=now, ai_error=None):
             problems.append(f"{item_id}: document changed while being read; stale AI answer discarded")
             continue
         saved += 1

@@ -57,25 +57,38 @@ def process_documents(store: Store, settings, keywords, sites: dict, today: date
 
 
 def read_with_claude_plan(store: Store, settings, sites: dict, today: date) -> dict:
-    """Queue the new documents, let Claude Code read them with the Claude plan, and save the answers."""
-    from .claude_reader import read_queue
+    """Queue the new documents, let Claude Code (or OpenRouter, see openrouter_reader.py) read them, save the answers."""
+    from . import openrouter_reader
 
     summary = {"done": 0, "failed": 0, "copied": 0, "cost": 0.0, "skipped_reason": ""}
+    use_openrouter = openrouter_reader.enabled()
+    if use_openrouter:
+        # Free OpenRouter models allow few requests a day; the rest are read in later scans.
+        settings.ai["max_docs_per_run"] = openrouter_reader.docs_per_run(int(settings.ai.get("max_docs_per_run", 25)))
     queued = ai_extract.export_queue(store, settings, sites, today)
     if not queued:
         log.info("No new documents to read")
         return summary
-    log.info("%d documents queued; starting Claude Code (Claude plan, no API cost)", queued)
     queue = json.loads(ai_extract.QUEUE_FILE.read_text(encoding="utf-8"))
     expected = {int(r["id"]): int(r["revision"]) for r in queue["items"]}
-    ok, message = read_queue(settings, timeout_minutes=int(settings.ai.get("timeout_minutes", 20)))
-    log.info("Claude Code: %s", message)
+    timeout = int(settings.ai.get("timeout_minutes", 20))
+    if use_openrouter:
+        reader, model = "OpenRouter", "openrouter:" + openrouter_reader.env("OPENROUTER_MODEL")
+        log.info("%d documents queued; starting OpenRouter", queued)
+        ok, message = openrouter_reader.read_queue(settings, timeout_minutes=timeout)
+    else:
+        from .claude_reader import read_queue
+        reader, model = "Claude Code", "claude-app"
+        log.info("%d documents queued; starting Claude Code (Claude plan, no API cost)", queued)
+        ok, message = read_queue(settings, timeout_minutes=timeout)
+    log.info("%s: %s", reader, message)
     # Kept until a later read works, so every summary email shows it.
     store.kv_set("claude_problem", "Claude Code is not logged in: documents are waiting. Open a terminal, run "
-                 "`claude`, type /login and sign in." if "not logged in" in message.lower() else "")
+                 "`claude`, type /login and sign in." if "not logged in" in message.lower() else
+                 f"AI reading: {message}" if use_openrouter and "not set up" in message else "")
     store.commit()
     if ok:
-        saved, problems = ai_extract.import_results(store, ai_extract.RESULTS_FILE, expected=expected)
+        saved, problems = ai_extract.import_results(store, ai_extract.RESULTS_FILE, expected=expected, model=model)
         summary["done"] = saved
         if problems:
             log.warning("Claude answers with problems: %s", problems[:5])
