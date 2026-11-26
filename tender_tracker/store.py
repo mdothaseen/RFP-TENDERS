@@ -234,14 +234,15 @@ class Store:
                 """INSERT INTO items(key, site_code, url, title, link_text, context, source_page, found_via,
                    linked_seen, hidden, is_document, file_ext, category, keywords, relevance, published_date,
                    date_source, deadline_hint, wp_id, first_seen, last_seen, first_run_id, baseline, ai_status,
-                   uploaded_date, uploaded_source)
-                   VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                   uploaded_date, uploaded_source, local_path, sha256, doc_size)
+                   VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (found.key, found.site_code, found.url, found.title, found.link_text, found.context,
                  found.source_page, ",".join(sorted(via)), int(found.linked), hidden, int(found.is_document),
                  found.file_ext, cls.category, ", ".join(cls.matched[:5]), cls.relevance, _iso(found.published),
                  found.date_source, _iso(found.deadline), found.wp_id, now, now, run_id, int(baseline),
                  "pending" if cls.category in ai_categories else "skipped",
-                 _iso(found.uploaded), found.uploaded_source or None),
+                 _iso(found.uploaded), found.uploaded_source or None,
+                 found.local_path, found.sha256, found.doc_size),
             )
             return cur.lastrowid, True
 
@@ -282,6 +283,13 @@ class Store:
              published, date_source, _iso(found.deadline), found.wp_id, int(found.linked or not row["context"]), found.context,
              ai_status, url, uploaded, uploaded_source or None, row["id"]),
         )
+        if found.local_path and row["local_path"] != found.local_path:
+            # A portal document downloaded during this scan: hand it to the documents step for reading.
+            self.db.execute(
+                "UPDATE items SET local_path=?, sha256=?, doc_size=?, file_ext=?, is_document=1, "
+                "doc_status=NULL, doc_attempts=0, doc_error=NULL WHERE id=?",
+                (found.local_path, found.sha256, found.doc_size, found.file_ext or "zip", row["id"]),
+            )
         previous_deadline = row["deadline_hint"]
         if not previous_deadline:
             try:

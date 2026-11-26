@@ -336,8 +336,10 @@ def process_item(fetcher: Fetcher, row, settings: Settings, keywords: Keywords, 
     TEXT_DIR.mkdir(parents=True, exist_ok=True)
     text_path = TEXT_DIR / f"{row['id']}_r{dict(row).get('revision', 0)}.txt"
 
-    if is_portal_tender(row["url"]):
-        # e-procurement tender: its detail page was saved during the scan (the portal link has expired since)
+    local = dict(row).get("local_path")
+    if is_portal_tender(row["url"]) and not (local and (ROOT / local).is_file()):
+        # e-procurement tender without a downloaded bundle: its detail page was saved during the scan
+        # (the portal link has expired since). A downloaded zip falls through to the normal file path.
         saved = detail_file(row["url"])
         if not saved.exists():
             return {"doc_status": "error", "doc_attempts": attempts, "doc_error": "portal detail page not saved"}

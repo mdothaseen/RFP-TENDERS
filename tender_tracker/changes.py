@@ -12,6 +12,7 @@ from uuid import uuid4
 
 from .classify import classify
 from .config import ROOT, site_dir
+from .discover.nic_portal import is_portal_tender
 from .documents import _download_url, sniff_kind
 from .events import record_item_event, stamp
 from .fetcher import Fetcher
@@ -59,6 +60,8 @@ def revalidate_documents(store, settings, keywords, sites: dict, now: datetime |
         for old in rows:
             if old["site_code"] not in sites:
                 continue
+            if is_portal_tender(old["url"]):
+                continue  # portal links are session tokens; new versions arrive as new tender rows
             code = old["site_code"]
             if code not in fetchers:
                 fetchers[code] = fetcher_factory(sites[code], settings)

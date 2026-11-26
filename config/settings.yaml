@@ -58,6 +58,15 @@ documents:
     max_pages: 30
     language: eng+hin
     timeout_seconds: 90     # includes waiting for the OCR slot; incomplete work retries from the saved PDF
+  # State e-procurement (GePNIC) tender documents sit behind a CAPTCHA. Solve it with local Tesseract
+  # during the scan (the portal's links only live in that session) and keep the document bundle.
+  captcha:
+    enabled: true
+    max_attempts: 8         # CAPTCHA submissions per document before giving up (retried next scan)
+    max_refreshes: 3        # free CAPTCHA refreshes while the OCR readings disagree
+    max_docs_per_run: 12    # document bundles downloaded per portal per scan
+    time_budget_seconds: 180  # stop solving CAPTCHAs for this portal after this long (rest next scan)
+    tesseract_path: ""      # empty = auto-detect (PATH, then C:\Program Files\Tesseract-OCR)
 
 ai:
   # The documents are read by a logged-in Claude CLI with your Claude plan (no API key, no API bill).

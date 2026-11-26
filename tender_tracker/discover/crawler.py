@@ -69,6 +69,9 @@ class Found:
     wp_id: int | None = None
     uploaded: date | None = None        # when the file was put on the website
     uploaded_source: str = ""
+    local_path: str | None = None       # already-downloaded file (portal CAPTCHA documents)
+    sha256: str | None = None
+    doc_size: int | None = None
 
 
 @dataclass
