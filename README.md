@@ -1,5 +1,8 @@
 # SSC Tender & Notice Tracker
 
+> Poore project ki detail (har module, config, database, scan ka flow, dono systems, commands, limitations):
+> **[PROJECT_GUIDE.md](PROJECT_GUIDE.md)** — kisi naye developer ya doosre AI ko yahi file dein.
+
 ## 24x7 monitoring aur VPS setup
 
 Ab light scan, discovery aur document/AI worker alag chal sakte hain. Naya alert AI ka wait nahi karta;
