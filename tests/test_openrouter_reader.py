@@ -47,7 +47,7 @@ def test_rate_limit_stops_and_keeps_what_was_read(tmp_path, monkeypatch):
     replies = iter([_Resp(200, '{"doc_type": "RFP"}'), _Resp(429)])
     monkeypatch.setattr(openrouter_reader.requests.Session, "post", lambda self, url, json, timeout: next(replies))
     ok, message = openrouter_reader.read_queue(None)
-    assert ok and "limit reached" in message
+    assert ok and "busy or at its limit" in message
     assert len(json.loads(results.read_text(encoding="utf-8"))) == 1
 
 
@@ -58,3 +58,18 @@ def test_not_set_up_and_off_by_default(tmp_path, monkeypatch):
     assert not openrouter_reader.enabled()
     ok, message = openrouter_reader.read_queue(None)
     assert not ok and "not set up" in message
+
+
+def test_busy_free_model_hands_over_to_the_paid_one(tmp_path, monkeypatch):
+    results = _queue(tmp_path, monkeypatch, n=1)
+    monkeypatch.setenv("OPENROUTER_MODEL", "free/model:free, cheap/paid")
+    asked = []
+
+    def post(self, url, json, timeout):
+        asked.append(json["model"])
+        return _Resp(429) if json["model"].endswith(":free") else _Resp(200, '{"doc_type": "EOI"}')
+
+    monkeypatch.setattr(openrouter_reader.requests.Session, "post", post)
+    ok, message = openrouter_reader.read_queue(None)
+    assert ok and asked == ["free/model:free", "cheap/paid"] and "cheap/paid: 1" in message
+    assert json.loads(results.read_text(encoding="utf-8"))[0]["doc_type"] == "EOI"

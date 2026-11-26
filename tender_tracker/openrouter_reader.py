@@ -83,12 +83,26 @@ def _parse(answer: str) -> dict | None:
     return data if isinstance(data, dict) else None
 
 
+def _ask_models(session: requests.Session, models: list[str], system: str, user: str) -> tuple[dict | None, str, str]:
+    """Tries the models in order (free first, then cheap paid): a busy or failing model hands over to the next.
+    Returns (fields, problem, model that answered)."""
+    problem = ""
+    for model in models:
+        fields, problem = _ask(session, model, system, user)
+        if fields is not None:
+            return fields, "", model
+        if problem.startswith("key/credit"):
+            return None, problem, ""
+        log.info("OpenRouter %s: %s; trying the next model", model, problem)
+    return None, problem, ""
+
+
 def _ask(session: requests.Session, model: str, system: str, user: str) -> tuple[dict | None, str]:
-    """One document. Returns (fields, problem). problem 'limit' means stop for this scan."""
+    """One document, one model. Returns (fields, problem); problem 'limit' = model busy or day limit reached."""
     body = {"model": model, "temperature": 0,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
     problem = ""
-    for _ in range(3):
+    for _ in range(2):
         try:
             resp = session.post(URL, json=body, timeout=180)
         except requests.RequestException as exc:
@@ -117,8 +131,9 @@ def _ask(session: requests.Session, model: str, system: str, user: str) -> tuple
 
 def read_queue(settings, timeout_minutes: int = 20) -> tuple[bool, str]:
     """Reads data/ai_queue.json with OpenRouter. Returns (results file written, message)."""
-    key, model = env("OPENROUTER_API_KEY"), env("OPENROUTER_MODEL")
-    if not key or not model:
+    key = env("OPENROUTER_API_KEY")
+    models = [m.strip() for m in env("OPENROUTER_MODEL").split(",") if m.strip()]
+    if not key or not models:
         return False, "OpenRouter is not set up: OPENROUTER_API_KEY and OPENROUTER_MODEL are needed in .env"
     try:
         max_chars = int(env("OPENROUTER_MAX_CHARS", "60000"))
@@ -132,8 +147,8 @@ def read_queue(settings, timeout_minutes: int = 20) -> tuple[bool, str]:
     session.headers.update({"Authorization": f"Bearer {key}", "X-Title": "SSC Tender Tracker"})
     RESULTS_FILE.unlink(missing_ok=True)
     deadline = time.monotonic() + timeout_minutes * 60
-    results, skipped, stop = [], 0, ""
-    log.info("OpenRouter (%s) is reading %d queued documents", model, len(queue["items"]))
+    results, skipped, stop, used = [], 0, "", {}
+    log.info("OpenRouter (%s) is reading %d queued documents", ", ".join(models), len(queue["items"]))
     for item in queue["items"]:
         if time.monotonic() > deadline:
             stop = f"time limit of {timeout_minutes} min reached"
@@ -145,9 +160,9 @@ def read_queue(settings, timeout_minutes: int = 20) -> tuple[bool, str]:
         user = (f"Organisation: {item['organisation']}\nTitle on website: {item['title_on_website']}\n"
                 f"Text next to the link: {item['text_next_to_link']}\nDate on website: {item['date_on_website']}\n"
                 f"Link: {item['link']}\n\n<document>\n{text}\n</document>")
-        fields, problem = _ask(session, model, system, user)
+        fields, problem, answered_by = _ask_models(session, models, system, user)
         if problem == "limit":
-            stop = "OpenRouter daily/minute limit reached"
+            stop = "every OpenRouter model is busy or at its limit"
             break
         if problem.startswith("key/credit"):
             stop = "OpenRouter " + problem
@@ -156,10 +171,13 @@ def read_queue(settings, timeout_minutes: int = 20) -> tuple[bool, str]:
             log.warning("OpenRouter could not read #%s: %s", item["id"], problem)
             continue
         results.append({"id": item["id"], "revision": item["revision"], **fields})
+        used[answered_by] = used.get(answered_by, 0) + 1
         time.sleep(3)  # free models allow about 20 requests a minute
     if results:
         RESULTS_FILE.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
     message = f"read {len(results)} of {len(queue['items'])} documents"
+    if used:
+        message += " (" + ", ".join(f"{m}: {n}" for m, n in used.items()) + ")"
     if skipped:
         message += f"; {skipped} scanned PDF(s) without text skipped"
     if stop:
