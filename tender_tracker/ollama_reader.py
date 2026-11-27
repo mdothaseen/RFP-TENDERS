@@ -30,6 +30,14 @@ def enabled() -> bool:
     return env("AI_READER").lower() == "ollama"
 
 
+def docs_per_run(default: int) -> int:
+    """OLLAMA_DOCS_PER_RUN in .env, else the settings value (a local model has no daily limit, only speed)."""
+    try:
+        return int(env("OLLAMA_DOCS_PER_RUN") or default)
+    except ValueError:
+        return default
+
+
 def _host() -> str:
     return (env("OLLAMA_HOST") or "http://localhost:11434").rstrip("/")
 

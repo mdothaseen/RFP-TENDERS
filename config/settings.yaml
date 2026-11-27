@@ -50,6 +50,13 @@ documents:
   unknown_per_run: 10        # small discovery batch: ambiguous files can hide tenders
   deep_max_per_run: 300      # --deep / Sunday can drain more of the old backlog
   deep_unknown_per_run: 100
+  # --drain-backlog (24x7 desktop): download + OCR + AI the documents found in the last backlog_days,
+  # in bigger rounds than a scan. It waits while a scan runs so the scan's email keeps its AI details.
+  backlog_days: 30
+  backlog_per_run: 200
+  backlog_unknown_per_run: 50
+  backlog_time_budget_seconds: 1800   # stop starting new downloads after 30 min per round
+  backlog_ai_minutes: 60              # time for the AI (local Ollama is slow on a CPU) per round
   time_budget_seconds: 300   # stop starting new documents after 5 min; finish/save in-flight work
   progress_seconds: 15      # print a heartbeat even while one file is slow
   # Scanned PDFs (photos of pages): read their text with Tesseract OCR, English + Hindi.

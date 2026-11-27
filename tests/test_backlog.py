@@ -44,14 +44,28 @@ def test_retire_old_junk_keeps_old_live_relevant(tmp_path):
     assert backlog.retire_old_junk(store, settings, kw, TODAY) == 0
 
 
-def test_drain_selects_only_old_documents(tmp_path):
+def test_drain_works_on_the_last_30_days_with_bigger_rounds(tmp_path):
     from tender_tracker import documents
     store = Store(tmp_path / "t.db")
     kw, settings = load_keywords(), load_settings()
     old = _add(store, kw, "old", date(2026, 9, 1), "2026-12-01", "High", "Tender for old assessment")
     new = _add(store, kw, "new", date(2026, 11, 20), None, "High", "Tender for new assessment")
     store.commit()
-    from datetime import timedelta
-    window = TODAY - timedelta(days=int(settings.documents.get("baseline_days", 30)))
-    batch = documents.plan_documents(store, settings, kw, TODAY, window_days=365, before=window)
-    assert {r["id"] for r in batch.rows} == {old}
+    limits = backlog.drain_settings(settings)
+    assert limits.documents["max_per_run"] == settings.documents["backlog_per_run"] > settings.documents["max_per_run"]
+    assert limits.ai["timeout_minutes"] == settings.documents["backlog_ai_minutes"]
+    assert settings.documents["max_per_run"] == 60  # the scan's own limit is untouched
+    batch = documents.plan_documents(store, limits, kw, TODAY, window_days=settings.documents["backlog_days"])
+    assert {r["id"] for r in batch.rows} == {new}
+    store.close()
+
+
+def test_drain_waits_while_a_scan_runs(tmp_path, monkeypatch):
+    store = Store(tmp_path / "t.db")
+    monkeypatch.setattr(backlog.locking, "run_in_progress", lambda: True)
+    called = []
+    monkeypatch.setattr(backlog.enrich, "process_documents", lambda *a, **k: called.append(1) or 0)
+    result = backlog.drain(store, load_settings(), load_keywords(), {}, type("A", (), {"workers": 1, "no_ai": True})(),
+                           TODAY, 1)
+    assert result["skipped"] == "scan running" and not called
+    store.close()
