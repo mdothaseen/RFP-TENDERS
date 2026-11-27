@@ -47,22 +47,29 @@ def _document_text(item: dict, max_chars: int) -> str:
 def _ask(session: requests.Session, model: str, system: str, user: str) -> tuple[dict | None, str]:
     body = {"model": model, "stream": False, "options": {"temperature": 0},
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
-    try:
-        resp = session.post(f"{_host()}/api/chat", json=body, timeout=300)
-    except requests.RequestException as exc:
-        return None, f"network error: {type(exc).__name__}"
-    if resp.status_code == 404:
-        return None, f"model '{model}' not found in Ollama (run: ollama pull {model})"
-    if resp.status_code >= 400:
-        return None, f"HTTP {resp.status_code}"
-    try:
-        content = resp.json()["message"]["content"] or ""
-    except (ValueError, KeyError, TypeError):
-        return None, "empty answer"
-    fields = _parse(content)
-    if fields is not None:
-        return fields, ""
-    return None, "answer was not JSON"
+    problem = ""
+    for attempt in range(2):
+        try:
+            resp = session.post(f"{_host()}/api/chat", json=body, timeout=300)
+        except requests.RequestException as exc:
+            return None, f"network error: {type(exc).__name__}"
+        if resp.status_code == 404:
+            return None, f"model '{model}' not found in Ollama (run: ollama pull {model})"
+        if resp.status_code >= 400:
+            return None, f"HTTP {resp.status_code}"
+        try:
+            content = resp.json()["message"]["content"] or ""
+        except (ValueError, KeyError, TypeError):
+            return None, "empty answer"
+        fields = _parse(content)
+        if fields is not None:
+            return fields, ""
+        problem = "answer was not JSON"
+        # Small local models sometimes wrap or truncate the JSON; ask once more, strictly.
+        body["messages"] = body["messages"][:2] + [
+            {"role": "assistant", "content": content},
+            {"role": "user", "content": "Reply again with ONLY the single JSON object, no other text."}]
+    return None, problem
 
 
 def read_queue(settings, timeout_minutes: int = 20) -> tuple[bool, str]:
