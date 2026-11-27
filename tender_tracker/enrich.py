@@ -15,8 +15,9 @@ log = logging.getLogger("tender_tracker")
 
 
 def process_documents(store: Store, settings, keywords, sites: dict, today: date, workers: int,
-                      deep: bool = False) -> int:
-    batch = documents.plan_documents(store, settings, keywords, today, deep=deep)
+                      deep: bool = False, window_days: int | None = None, before: date | None = None) -> int:
+    batch = documents.plan_documents(store, settings, keywords, today, deep=deep,
+                                     window_days=window_days, before=before)
     rows = batch.rows
     pending = batch.priority_pending + batch.unknown_pending
     log.info("Document queue: %d pending (%d priority, %d unknown); processing %d, deferred %d",
@@ -58,10 +59,11 @@ def process_documents(store: Store, settings, keywords, sites: dict, today: date
 
 def read_with_claude_plan(store: Store, settings, sites: dict, today: date) -> dict:
     """Queue the new documents, let Claude Code (or OpenRouter, see openrouter_reader.py) read them, save the answers."""
-    from . import openrouter_reader
+    from . import ollama_reader, openrouter_reader
 
     summary = {"done": 0, "failed": 0, "copied": 0, "cost": 0.0, "skipped_reason": ""}
-    use_openrouter = openrouter_reader.enabled()
+    use_ollama = ollama_reader.enabled()
+    use_openrouter = not use_ollama and openrouter_reader.enabled()
     if use_openrouter:
         # Free OpenRouter models allow few requests a day; the rest are read in later scans.
         settings.ai["max_docs_per_run"] = openrouter_reader.docs_per_run(int(settings.ai.get("max_docs_per_run", 25)))
@@ -72,7 +74,11 @@ def read_with_claude_plan(store: Store, settings, sites: dict, today: date) -> d
     queue = json.loads(ai_extract.QUEUE_FILE.read_text(encoding="utf-8"))
     expected = {int(r["id"]): int(r["revision"]) for r in queue["items"]}
     timeout = int(settings.ai.get("timeout_minutes", 20))
-    if use_openrouter:
+    if use_ollama:
+        reader, model = "Ollama", "ollama:" + ollama_reader.env("OLLAMA_MODEL")
+        log.info("%d documents queued; starting local Ollama", queued)
+        ok, message = ollama_reader.read_queue(settings, timeout_minutes=timeout)
+    elif use_openrouter:
         reader, model = "OpenRouter", "openrouter:" + openrouter_reader.env("OPENROUTER_MODEL")
         log.info("%d documents queued; starting OpenRouter", queued)
         ok, message = openrouter_reader.read_queue(settings, timeout_minutes=timeout)
@@ -85,7 +91,7 @@ def read_with_claude_plan(store: Store, settings, sites: dict, today: date) -> d
     # Kept until a later read works, so every summary email shows it.
     store.kv_set("claude_problem", "Claude Code is not logged in: documents are waiting. Open a terminal, run "
                  "`claude`, type /login and sign in." if "not logged in" in message.lower() else
-                 f"AI reading: {message}" if use_openrouter and "not set up" in message else "")
+                 f"AI reading: {message}" if (use_openrouter or use_ollama) and "not set up" in message else "")
     store.commit()
     if ok:
         saved, problems = ai_extract.import_results(store, ai_extract.RESULTS_FILE, expected=expected, model=model)

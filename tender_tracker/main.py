@@ -37,6 +37,8 @@ def parse_args(argv=None):
     modes = p.add_mutually_exclusive_group()
     modes.add_argument("--light", action="store_true", help="one lightweight listing/version check; no sitemap/OCR/AI")
     modes.add_argument("--enrich", action="store_true", help="process saved document/AI backlog without a website crawl")
+    modes.add_argument("--drain-backlog", action="store_true",
+                       help="clear the OLD document backlog (retire junk, read old live tenders); run on a schedule")
     modes.add_argument("--drain-outbox", action="store_true", help="retry due email/Telegram deliveries")
     modes.add_argument("--health", action="store_true", help="print health JSON; add --notify for incident alerts")
     modes.add_argument("--backup", action="store_true", help="create and verify a database/files backup")
@@ -133,8 +135,9 @@ def _maintenance(args, settings, keywords, sites) -> int:
         backup.restore_backup(Path(args.restore_backup), Path(args.restore_to))
         print(f"Restored to new directory: {args.restore_to}")
         return 0
-    needs_lock = args.enrich or args.backup or args.reclassify
-    lock_path = locking.LOCK if args.reclassify else DATA_DIR / ("enrich.lock" if args.enrich else "backup.lock")
+    needs_lock = args.enrich or args.backup or args.reclassify or args.drain_backlog
+    lock_path = locking.LOCK if args.reclassify else DATA_DIR / (
+        "enrich.lock" if (args.enrich or args.drain_backlog) else "backup.lock")
     if needs_lock and not locking.acquire(lock_path):
         return 3
     try:
@@ -168,6 +171,17 @@ def _maintenance(args, settings, keywords, sites) -> int:
                 except BaseException:
                     store.finish_run(run_id, "failed", 0, "Enrichment interrupted or failed; saved work retained")
                     raise
+            elif args.drain_backlog:
+                from . import backlog
+                run_id = store.start_run("drain", False, args.deep)
+                try:
+                    result = backlog.drain(store, settings, keywords, sites, args, today, run_id)
+                    store.finish_run(run_id, "done", 0, f"Backlog drain: {result['retired']} retired, "
+                                                       f"{result['documents_ready']} ready")
+                    print(json.dumps(result, ensure_ascii=False, default=str))
+                except BaseException:
+                    store.finish_run(run_id, "failed", 0, "Backlog drain interrupted; saved work retained")
+                    raise
         finally:
             store.close()
     finally:
@@ -185,7 +199,7 @@ def main(argv=None) -> int:
     setup_logging(args.verbose)
     settings, keywords, site_list = load_settings(), load_keywords(), load_sites()
     sites = {s.code: s for s in site_list}
-    if any((args.enrich, args.drain_outbox, args.health, args.backup, args.serve, args.verify_backup, args.restore_backup, args.check_config,
+    if any((args.enrich, args.drain_backlog, args.drain_outbox, args.health, args.backup, args.serve, args.verify_backup, args.restore_backup, args.check_config,
             args.reclassify)):
         return _maintenance(args, settings, keywords, sites)
 

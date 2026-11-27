@@ -513,16 +513,23 @@ def reconcile_files(store) -> int:
     return count
 
 
-def plan_documents(store, settings: Settings, keywords: Keywords, today: date, deep: bool = False) -> DocumentBatch:
-    """Budget uncertain documents separately so old manuals cannot fill every regular scan."""
+def plan_documents(store, settings: Settings, keywords: Keywords, today: date, deep: bool = False,
+                   window_days: int | None = None, before: date | None = None) -> DocumentBatch:
+    """Budget uncertain documents separately so old manuals cannot fill every regular scan.
+
+    window_days overrides documents.baseline_days; `before` keeps only documents published earlier
+    than that date (used by the backlog drain to work on old items, not the new ones)."""
     categories = set(settings.documents.get("download_categories") or [])
     ai_categories = set(settings.ai.get("categories") or [])
-    window = today - timedelta(days=int(settings.documents.get("baseline_days", 365)))
+    days = int(window_days if window_days is not None else settings.documents.get("baseline_days", 365))
+    window = today - timedelta(days=days)
     rows = store.items(
         "removed=0 AND url IS NOT NULL AND (doc_status IS NULL OR (doc_status='error' AND doc_attempts < 3))")
     priority, uncertain = [], []
     for row in rows:
         published = row["published_date"]
+        if before is not None and (not published or published >= before.isoformat()):
+            continue
         recent = (published and published >= window.isoformat()) or (not published and row["linked_seen"])
         if not recent:
             continue
