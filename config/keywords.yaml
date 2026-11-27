@@ -191,6 +191,7 @@ relevance_medium:
   - 'pm.?setu|anchor industry partner|\bitis? (upgradation|cluster)|upgradation of (govt\.? )?itis?'
   - 'industry experts?|boards? of studies|curriculum (development|design)|course (content|development)'
   - 'capacity building|e.?learning|learning management system|\blms\b'
+  - 'centre of excellence|center of excellence|\bcoe\b|sector skill councils?|\bsscs?\b'
 # Work the company does not do. A tender whose title only matches these is Low before Claude reads it.
 relevance_low:
   - 'construct'
