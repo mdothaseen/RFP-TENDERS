@@ -169,6 +169,13 @@ relevance_high:
   - '\btot\b|\btoa\b|training of trainers|training of assessors'
   - '\bddu-?gky\b|\bpmkk\b|\bnaps\b|apprenticeship'
 # Work close to assessment that the company could bid for (see company_profile in settings.yaml).
+  # Added 2026-11-27 from past High/Medium tenders the old list missed:
+  - 'internet.based assessment|online assessment|computer.based (test|assessment)|\bibt\b'
+  - 'conduct(ing)? (of )?(the )?assessments?|assessment (and|&) certification|skill (assessment|test)'
+  - 'pm.?vishwakarma|\bnsqf\b|qualification packs?|job roles?'
+  - 'empanelment of (trainers?|master trainers?|training|assessment)|master trainers?'
+  - 'kaushal|\bnats\b|placement.linked|skill (centre|center|hub)s?'
+  - 'प्रशिक्षण|मूल्यांकन|कौशल'
 relevance_medium:
   - 'skill gap'
   - 'content (development|creation)'
@@ -180,6 +187,10 @@ relevance_medium:
   - '\bsurvey\b'
   - 'baseline (study|survey)'
   - 'tracer study'
+  # Added 2026-11-27 from past Medium tenders:
+  - 'pm.?setu|anchor industry partner|\bitis? (upgradation|cluster)|upgradation of (govt\.? )?itis?'
+  - 'industry experts?|boards? of studies|curriculum (development|design)|course (content|development)'
+  - 'capacity building|e.?learning|learning management system|\blms\b'
 # Work the company does not do. A tender whose title only matches these is Low before Claude reads it.
 relevance_low:
   - 'construct'
