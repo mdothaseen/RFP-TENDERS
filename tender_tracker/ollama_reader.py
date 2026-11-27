@@ -63,7 +63,8 @@ def _ask(session: requests.Session, model: str, system: str, user: str) -> tuple
             return None, "empty answer"
         fields = _parse(content)
         if fields is not None:
-            return fields, ""
+            # Small models sometimes pad keys with spaces; normalise so field lookup still matches.
+            return {str(k).strip(): v for k, v in fields.items()}, ""
         problem = "answer was not JSON"
         # Small local models sometimes wrap or truncate the JSON; ask once more, strictly.
         body["messages"] = body["messages"][:2] + [
