@@ -114,6 +114,21 @@ def retire_stale(store, settings: Settings, today: date) -> int:
     return retired
 
 
+def _mentions_our_work(row, chars: int, patterns: list) -> bool:
+    """True when the title, link text or the first `chars` of the document (about 2 pages) mention
+    training or assessment work (keywords.yaml relevance_high + relevance_medium)."""
+    text = " ".join(str(row[k] or "") for k in ("title", "link_text", "context"))
+    if row["text_path"]:
+        try:
+            with open(ROOT / row["text_path"], encoding="utf-8", errors="replace") as fh:
+                text += " " + fh.read(chars)
+        except OSError:
+            return True  # cannot check: let the model read it
+    elif row["scanned"]:
+        return True      # scanned PDF without text: nothing to check here
+    return any(p.search(text) for p in patterns)
+
+
 def select_items(store, settings: Settings, baseline: bool, today: date) -> list:
     categories = set(settings.ai.get("categories") or [])
     max_attempts = int(settings.ai.get("max_attempts", 3))
@@ -121,6 +136,14 @@ def select_items(store, settings: Settings, baseline: bool, today: date) -> list
     since_recent = (today - timedelta(days=int(settings.ai.get("recent_days", 120)))).isoformat()
     rows = store.items("removed=0 AND ai_status IN ('pending','failed') AND ai_attempts < ?", (max_attempts,))
     read_from = str(settings.ai.get("read_from") or "")
+    # Slow local models (Ollama): only documents whose title or first pages mention our work are read.
+    prefilter = int(settings.ai.get("prefilter_chars") or 0)
+    patterns = []
+    if prefilter:
+        from .config import load_keywords
+        kw = load_keywords()
+        patterns = list(kw.relevance_high) + list(kw.relevance_medium)
+    skipped = 0
     chosen = []
     for row in rows:
         if read_from and (row["first_seen"] or "")[:10] < read_from:
@@ -144,7 +167,14 @@ def select_items(store, settings: Settings, baseline: bool, today: date) -> list
         if not row["text_path"] and not row["scanned"]:
             store.update_item(row["id"], ai_status="skipped", ai_error="document text could not be read")
             continue
+        if prefilter and not _mentions_our_work(row, prefilter, patterns):
+            store.update_item(row["id"], ai_status="skipped", relevance="Low",
+                              ai_error=f"prefilter: no training/assessment words in the first ~2 pages")
+            skipped += 1
+            continue
         chosen.append(row)
+    if skipped:
+        log.info("AI pre-filter: %d documents skipped (no training/assessment words in the first ~2 pages)", skipped)
     rank = {"High": 0, "Medium": 1, "Low": 2}
     chosen.sort(key=lambda r: (rank.get(r["relevance"], 3), -(parse_iso(r["published_date"]) or date.min).toordinal()))
     return chosen[: int(settings.ai.get("max_docs_per_run", 40))]

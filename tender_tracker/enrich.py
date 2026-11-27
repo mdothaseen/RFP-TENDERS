@@ -69,6 +69,8 @@ def read_with_claude_plan(store: Store, settings, sites: dict, today: date) -> d
         settings.ai["max_docs_per_run"] = openrouter_reader.docs_per_run(int(settings.ai.get("max_docs_per_run", 25)))
     elif use_ollama:
         settings.ai["max_docs_per_run"] = ollama_reader.docs_per_run(int(settings.ai.get("max_docs_per_run", 25)))
+        # A local model on a CPU is slow: skip documents whose first ~2 pages never mention our work.
+        settings.ai["prefilter_chars"] = int(settings.ai.get("ollama_prefilter_chars", 6000))
     queued = ai_extract.export_queue(store, settings, sites, today)
     if not queued:
         log.info("No new documents to read")

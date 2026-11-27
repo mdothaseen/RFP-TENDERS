@@ -88,6 +88,9 @@ ai:
   max_pdf_pages: 100         # scanned PDFs: first N pages only (marked in Excel)
   max_attempts: 3
   timeout_minutes: 20        # Claude CLI worker; scanning and email retries run separately on VPS
+  # Local Ollama only (desktop): a document is read only if its title or first N characters (~2 pages)
+  # mention training/assessment work (keywords.yaml relevance_high/medium); others are marked Low. 0 = off.
+  ollama_prefilter_chars: 6000
 
 excel:
   include_all: true         # every item found on the websites is in Excel (emails stay short)

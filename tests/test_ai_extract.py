@@ -95,3 +95,43 @@ def test_closed_and_old_tenders_leave_the_queue(tmp_path):
               if stays and (published is None or published.isoformat() >= window)}
     assert planned == expect
     assert ai_extract.retire_stale(store, settings, today) == 0
+
+
+def test_ollama_prefilter_skips_documents_without_our_work(tmp_path):
+    """With a slow local model, a document whose first ~2 pages never mention training/assessment is not read."""
+    from datetime import date, datetime
+    from tender_tracker.classify import classify
+    from tender_tracker.config import load_keywords
+    from tender_tracker.discover.crawler import Found
+    from tender_tracker.store import Store
+
+    store = Store(tmp_path / "t.db")
+    kw, settings = load_keywords(), load_settings()
+    texts = {
+        "assessment": "Notice inviting tender. Selection of third party assessment agency for PMKVY candidates.",
+        "late_mention": "Notice inviting tender for civil works. " + "x " * 5000 + "assessment agency",
+        "furniture": "Notice inviting tender for supply of office furniture and chairs.",
+    }
+    ids = {}
+    for key, text in texts.items():
+        f = Found(key=key, site_code="TST", url=f"https://x.org/{key}.pdf", title=f"Tender No. {len(key)}",
+                  link_text="", context="", source_page="", via={"page"}, linked=True, is_document=True,
+                  published=date(2026, 11, 20))
+        ids[key], _ = store.upsert(f, classify(kw, "Tender"), 1, False, datetime.now().isoformat(), {"Tender"})
+        path = tmp_path / f"{key}.txt"
+        path.write_text(text, encoding="utf-8")
+        store.update_item(ids[key], doc_status="ok", text_path=str(path), category="Tender")
+    store.commit()
+
+    settings.ai["prefilter_chars"] = 6000
+    chosen = {r["id"] for r in ai_extract.select_items(store, settings, False, date(2026, 11, 27))}
+    assert chosen == {ids["assessment"]}
+    for key in ("late_mention", "furniture"):
+        row = store.item(ids[key])
+        assert row["ai_status"] == "skipped" and row["relevance"] == "Low" and row["ai_error"].startswith("prefilter")
+
+    # Without the setting (Claude on the laptop) nothing is filtered.
+    settings.ai["prefilter_chars"] = 0
+    store.update_item(ids["furniture"], ai_status="pending", ai_error=None)
+    assert ids["furniture"] in {r["id"] for r in ai_extract.select_items(store, settings, False, date(2026, 11, 27))}
+    store.close()
